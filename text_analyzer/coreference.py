@@ -2,6 +2,7 @@
 import spacy
 import neuralcoref
 
+
 class Coref:
     def __init__(self):
         self.nlp = spacy.load('en')

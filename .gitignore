@@ -1,2 +1,6 @@
+
+**/__pycache__/
 .idea/
 FindRel-main/
+.venv/
+KoreanFacts-main/

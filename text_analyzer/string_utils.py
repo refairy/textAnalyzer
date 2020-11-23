@@ -8,10 +8,15 @@ try:
 except:
     from options import *
 
+
 class StringUtils:
     def printf(self, *string, end='\n'):
         if self.debug:
             print(*string, end=end)
+
+    def extract_relative_clause(self, phrases, poses):
+        phrases
+
     def get_repreposes(self, poses):
         # 대표 품사를 반환한다.
         def find(a):
@@ -46,7 +51,7 @@ class StringUtils:
                     continue
                 r_phrases.append(tmp_phrases)
                 r_poses.append(tmp_poses)
-                r_conjs.append(phrases[i])
+                r_conjs.append(phrases[i].split(' ')[-1])  # conj가 ', and'일 경우 제일 마지막 걸로 저장 'and'
                 tmp_phrases = []
                 tmp_poses = []
             else:
@@ -78,7 +83,9 @@ class StringUtils:
                 flattend_poses = self.totally_flatten([poses[i][j]])
                 for k in range(len(self.totally_flatten([clauses[i][j]]))):
                     #self.printf(i, j, flattend_clauses[k])
-                    go += flattend_poses[k] in ['WRB'] or flattend_clauses[k].lower() in ['if', 'when', 'whether'] or (k == 0 and flattend_clauses[k].lower() in ['after', 'before'])
+                    go += flattend_poses[k] in ['WRB'] or \
+                          flattend_clauses[k].lower() in hate_startswith or \
+                          (k == 0 and flattend_clauses[k].lower() in ['after', 'before'])
                 #self.printf(flattend_clauses[0], go)
                 #if poses[i][j] in ['WRB'] or clauses[i][j].lower() in ['if', 'when']:
                 if go:
@@ -176,6 +183,8 @@ class StringUtils:
                 tag = (tag[0], 'MON')
             if tag[0] in absolute_unit:
                 tag = (tag[0], 'UNIT')
+            if tag[0] in replace_pos.keys():
+                tag = (tag[0], replace_pos[tag[0]])
             r.append(tag)
         return r
 
@@ -199,7 +208,10 @@ class StringUtils:
         r = []
         for i in t:
             if isinstance(i, nltk.tree.Tree):
-                r.extend(self.get(i))
+                tmp = self.get(i)
+                if not self.totally_flatten(tmp):
+                    continue
+                r.extend(tmp)
             elif not i[1] in drops or i[0] in replace_pos:
                 r.append(i[0])
         return [r]

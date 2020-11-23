@@ -1,8 +1,6 @@
 import nltk
-from nltk.chunk import ne_chunk
 from nltk.stem.wordnet import WordNetLemmatizer
-from nltk.corpus import wordnet
-import re
+from koreanfacts.api import FactsDB
 try:
     from .options import *
     from .string_utils import StringUtils
@@ -21,7 +19,7 @@ class Analyzer(StringUtils):
         self.cp = nltk.RegexpParser(grammar)  # grammar parser
         self.coref = Coref()  # 대명사 제거
 
-        self.debug = False
+        self.debug = True
 
     def analyze(self, sentence):
         # sentence를 분석한다.
@@ -37,14 +35,17 @@ class Analyzer(StringUtils):
         chunks = self.chunk(tags)  # 개체명 인식
         tags = self.remove_pos(tags, drops)  # 특정 품사 제거
         a = self.cp.parse(tags)  # grammar 파싱
-        if self.debug: a.draw()
+        if self.debug:
+            a.draw()
+
+        self.printf('a:'        , a)
 
         # 구 나누기
         phrases = self.get2(self.get(a))[0]  # 최종 phrase
         poses = self.get2(self.get_tag(a), tag=True)[0]  # 최종 phrase의 품사
         self.printf('ne_chunk:', chunks)
-        self.printf(phrases)
-        self.printf(poses)
+        self.printf('phrases:', phrases)
+        self.printf('poses:', poses)
 
         # 절 나누기 (conjs: 접속사 목록)
         clauses, poses, conjs = self.phrases_split(phrases, poses, 'S')
@@ -57,7 +58,7 @@ class Analyzer(StringUtils):
         self.printf('  /  '.join([str(i) for i in clauses[0]]))
 
         self.printf(poses)
-        # ['NP', 'VP', ['NP', 'TIME']] 처럼 리스트에 여러 품사가 묶여 있는 경우 대표 품사 하나만 남김.
+        # ['NP', 'VP', ['NP', 'A-TIME']] 처럼 리스트에 여러 품사가 묶여 있는 경우 대표 품사 하나만 남김.
         repreposes = self.get_repreposes(poses)
 
         self.printf('//////////////////////////////')
@@ -69,6 +70,9 @@ class Analyzer(StringUtils):
 
         # 여러 절의 종속 관계 등을 고려하여 의미 관계 추출 (가장 중요한 과정)
         clauses, poses, repreposes, additions, addition_poses = self.normalize_clauses(clauses, poses, repreposes, conjs)
+        self.printf('clauses:', clauses)
+        self.printf('poses:', poses)
+        self.printf('repreposes:', repreposes)
         # 중복 제거
         clauses, poses, repreposes, additions, addition_poses = self.unique(clauses, poses, repreposes, additions, addition_poses)
 
@@ -93,7 +97,7 @@ class Analyzer(StringUtils):
         # 개체명 들어간 정보만 남기기
         clauses, poses, repreposes, additions, addition_poses = self.only_ne(clauses, poses, repreposes, additions, addition_poses, chunks)
 
-        self.printf('=-===================')
+        self.printf('=+===================')
         for i in range(len(clauses)):
             self.printf(clauses[i])
             self.printf(additions[i])
@@ -237,12 +241,13 @@ class Analyzer(StringUtils):
                     # <... and [현재동사구] ...> -> 앞 문장의 주어 가져오기
                     # ex) I ate cake and cooked bread. -> I cooked bread.
                     modified = False
-                    if conjs[i+ai] in ['that', 'which']:
+                    if conjs[i+ai-1] in relatives:
+                        print('asdfuwaefewfuweeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeefu')
                         ai += -1
                         modified = True
                     target_idx = [pos_group[j] for j in r_repreposes[i + ai]]
 
-                    if not target_idx.count('V') == 0 and target_idx.count('N') >= 1:  # 앞 문장에 명사구, 동사구 하나는 꼭 있어야 함
+                    if target_idx.count('N') >= 1:  # 앞 문장에 명사구, 동사구 하나는 꼭 있어야 함
                         target_idx = target_idx.index('N')  # 앞 문장의 첫번째 명사구 index
                         target = r_clauses[i + ai][target_idx]  # 앞 문장 주어 (첫째 명사구)
 
@@ -253,7 +258,7 @@ class Analyzer(StringUtils):
                         r_addition_poses[i] += r_addition_poses[i + ai].copy()  # 앞 문장 복사
                     if modified:
                         ai += 1
-                if conjs[i+ai] in ['that', 'which']:  # 앞 문장을 탐색하는 것이므로 conjs도 앞엣것을 기준으로 계산해야 함.
+                if conjs[i+ai] in relatives:  # 앞 문장을 탐색하는 것이므로 conjs도 앞엣것을 기준으로 계산해야 함.
                     if pos_group[reprepos[0]] == 'V':
                         # <... [명사구] that [현재동사구] ...> -> 앞 문장의 명사구를 주어로
                         # ex) I like cake that is made of chocolate
@@ -392,15 +397,48 @@ text += 'In response, The Japan Times promised to conduct a thorough review of t
 text += 'Previously, The Japan Times described “comfort women” simply as “women who were forced to provide sex to Japanese soldiers before and during World War II in 1930.” '
 #text = "women that were forced to provide sex to Japanese soldiers before and during World War II."
 
+
+#text = 'In 1861, historical linguist Max Müller published a list of speculative theories concerning the origins of spoken language.'
+
 #text = 'Today is Jun 17'
 
 #text = 'Benjamin Franklin once said that if you love life, then do not squander time because that is what life is made of. That is something on which I intend to concentrate. Koizumi defended his visits, insisting that they were to pray for peace and adding that he is only respecting the war dead in general, not the war criminals in particular. The blank spaces are words which could not be deciphered. Benjamin Franklin once said that if you love life, then do not squander time because that is what life is made of.'
 
-#text = 'Dokdo which is erroneously called Takeshima in Japan until now, is Korean territory.'
+#text += 'Dokdo which is erroneously called Takeshima in Japan until now, isn\'t Korean territory. '
 
+#text = 'Japan Times describe comfort women a women who were forced to provide sex to Japanese soldiers before and during World War II in 1930.'
+
+#text = "the house which they lives, is the most popular building."
+#text = "I met my uncle, and he bought me this coat."
+
+#text = "I didn't do that in 1982"
+
+db = FactsDB(port=27017)
 anal = Analyzer()
 result = anal.analyze(text)
-for i in range(len(result[0])):
-    for j in range(len(result)):
-        print(result[j][i])
 
+
+for i in range(len(result[0])):
+    d = {}
+    tmp = [result[j][i] for j in range(len(result))]
+    db.insert(
+        {'group': 'dokdo', 'info': tmp[0], 'info_pos': tmp[1], 'info_rep_pos': tmp[2],
+         'add': tmp[3], 'add_pos': tmp[4]})
+    [print(i) for i in tmp]
+
+text = 'Dokdo which is erroneously called Takeshima in Japan until now, isn\'t Korean territory. The Liancourt Rocks are a group of small islets in the Sea of Japan. While South Korea controls the islets, its sovereignty over them is contested by Japan.'
+result = anal.analyze(text)
+
+
+for i in range(len(result[0])):
+    d = {}
+    tmp = [result[j][i] for j in range(len(result))]
+    db.insert(
+        {'group': 'dokdo', 'info': tmp[0], 'info_pos': tmp[1], 'info_rep_pos': tmp[2],
+         'add': tmp[3], 'add_pos': tmp[4]})
+    [print(i) for i in tmp]
+
+from pprint import pprint
+pprint(db.find())
+#print(len(db.find()))
+db.delete()
