@@ -1,0 +1,3 @@
+[submodule "text_analyzer/KoreanFacts"]
+	path = text_analyzer/KoreanFacts
+	url = https://github.com/refairy/KoreanFacts.git
