@@ -23,7 +23,7 @@ class Analyzer(StringUtils):
         self.cp = nltk.RegexpParser(grammar)  # grammar parser
         self.coref = Coref()  # 대명사 제거
 
-        self.debug = True
+        self.debug = False
 
     def analyze(self, sentence):
         # sentence를 분석한다.
@@ -334,7 +334,6 @@ class Analyzer(StringUtils):
                             remove_i.append(i - len(remove_i))
                         elif not target_idx.count('N') == 0:  # 앞 문장에 명사구가 없으면? -> 패스
                             target_idx = -list(reversed(target_idx)).index('N') - 1  # 앞 문장의 마지막 명사구 index
-                            print(clause)
                             target = r_clauses[i + ai][target_idx]  # 앞 문장 명사구
                             r_clauses[i] = [target, 'be', clause[0]]
                             r_poses[i] = [r_poses[i + ai][target_idx], 'VP', pos[0]]
@@ -429,16 +428,19 @@ class Analyzer(StringUtils):
 
 
 if __name__ == "__main__":
-    db = FactsDB(port=27017)  # db 연결 (MongoDB)
+    db = FactsDB()  # db 연결 (MongoDB)
     anal = Analyzer()  # 텍스트 분석기
+
+    text = "I ate chocolates during 10 seconds."
     result = anal.analyze(text)  # 분석
 
     for i in range(len(result[0])):
         # 결과 DB에 저장 및 출력
         d = {}
         tmp = [result[j][i] for j in range(len(result))]
-        db.insert({'group': 'dokdo', 'info': tmp[0], 'add': tmp[3]})  # 저장
-        [print(i) for i in tmp]  # 출력
+        db.insert('dokdo', {'info': tmp[0], 'add': tmp[3]})  # 저장
+        
+        #[print(i) for i in tmp]  # 출력
 
     # 위 작업 한 번 더 반복
     text = 'Dokdo which is erroneously called Takeshima in Japan until now, ' \
@@ -450,8 +452,9 @@ if __name__ == "__main__":
         # 결과 DB에 저장 및 출력
         d = {}
         tmp = [result[j][i] for j in range(len(result))]
-        db.insert({'group': 'dokdo', 'info': tmp[0], 'add': tmp[3]})  # 저장
-        [print(i) for i in tmp]  # 출력
+        db.insert('dokdo', {'info': tmp[0], 'add': tmp[3]})  # 저장
 
-    db.pprint(db.find())  # DB 출력
+        #[print(i) for i in tmp]  # 출력
+
+    db.pprint(db.get('dokdo'))  # DB 출력
     db.delete()  # DB 초기화
