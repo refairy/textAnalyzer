@@ -21,8 +21,16 @@ if __name__ == "__main__":
             "add": ["HI"],
         },
     ]
+    data2 = {
+            "group": "dokdo",
+            "info": ["Hello", "world!"],
+            "add": ["hw"],
+    }
+    db.insert('dokdo', data2)
+    db.insert('dokdo', data)
+
+    print(db.get('dokdo'))
     db.insert('dokdo', data)
     print(db.get('dokdo'))
-    db.pprint(data)
-    db.delete('dokdo')
+    db.insert('dokdo', data2)
     print(db.get('dokdo'))

@@ -29,7 +29,7 @@ class FactsDB:
         """
         Inserts data into the file of the group.
         """
-        if type(data) == Dict:
+        if type(data) == dict:
             data = [data]
         
         filename: str = os.path.join(self.data_dir, f'{group}.json')
@@ -43,7 +43,7 @@ class FactsDB:
         with io.open(filename, 'r+', encoding='utf-8') as f:
             cursor: List[Dict] = json.load(f)
             for d in data:
-                if not d in cursor:
+                if d not in cursor:
                     cursor.append(d)
         with io.open(filename, 'w', encoding='utf-8') as f:
             json.dump(cursor, f, indent=4)
