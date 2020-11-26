@@ -49,7 +49,7 @@ class FactsDB:
             json.dump(cursor, f, indent=4)
     
     @staticmethod
-    def pprint(data: Union[List[Dict], Dict]):
+    def pprint(data: Union[List[Dict], Dict]) -> None:
         """
         Pretty-prints the data.
         """
