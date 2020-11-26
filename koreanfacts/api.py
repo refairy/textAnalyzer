@@ -5,14 +5,14 @@ from typing import Dict, List, Union
 
 
 class FactsDB:
-    def __init__(self, data_dir: str='./db/'):
+    def __init__(self, data_dir: str = './db/'):
         """
         Class of the database. Files are managed by groups and also manually editable.
         """
         self.data_dir = data_dir
         if not os.path.isdir(self.data_dir):
             os.mkdir(self.data_dir)
-    
+
     def get(self, group: str) -> List[Dict]:
         """
         Returns data found from a group.
@@ -31,7 +31,7 @@ class FactsDB:
         """
         if type(data) == dict:
             data = [data]
-        
+
         filename: str = os.path.join(self.data_dir, f'{group}.json')
 
         # create empty file
@@ -47,7 +47,7 @@ class FactsDB:
                     cursor.append(d)
         with io.open(filename, 'w', encoding='utf-8') as f:
             json.dump(cursor, f, indent=4)
-    
+
     @staticmethod
     def pprint(data: Union[List[Dict], Dict]) -> None:
         """
@@ -55,18 +55,16 @@ class FactsDB:
         """
         if type(data) == list:
             for d in data:
-                formatted =\
-                    f'group:        \t{d["group"]}\n'\
-                    f'info:         \t{d["info"]}\n'\
-                    f'add:          \t{d["add"]}\n'
+                formatted = \
+                        f'info:         \t{d["info"]}\n' \
+                        f'add:          \t{d["add"]}\n'
                 print(formatted)
 
         elif type(data) == dict:
             formatted = ""
-            formatted +=\
-                f'group:        \t{data["group"]}\n'\
-                f'info:         \t{data["info"]}\n'\
-                f'add:          \t{data["add"]}\n'
+            formatted += \
+                    f'info:         \t{data["info"]}\n' \
+                    f'add:          \t{data["add"]}\n'
             print(formatted)
 
     def delete(self, group: str) -> None:
