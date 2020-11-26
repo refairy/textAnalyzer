@@ -1,6 +1,7 @@
-
 **/__pycache__/
 .idea/
-FindRel-main/
 .venv/
+.backup/
+FindRel-main/
 KoreanFacts-main/
+text_comparison/assets/models/
