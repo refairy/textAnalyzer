@@ -360,10 +360,10 @@ class StringUtils:
 
         current_b = None
         current_i = None
-        r = []
         r_remain = []
         r_addition = []
         r_remain_pos = []
+        r_remain_ner = []  # ex) ['territory','of','Korea'] -> ['territory','of','COUNTRY']
         for i in range(len(bio)-1, -1, -1):
             if bio[i] == 'i':
                 current_b = i
@@ -378,48 +378,77 @@ class StringUtils:
                 # 현재 포인터가 b와 너무 멀리 떨어져 있으면
                 current_b = None
                 r_remain = [i['word'] for i in api_tags[i:current_i+1]] + r_remain
-                r_remain_pos = [(poses[i], api_tags[i]) for i in range(len(poses[i:current_i+1]))] + r_remain_pos
+                r_remain_pos = [(poses[i], (api_tags[i],)) for i in range(len(poses[i:current_i+1]))] + r_remain_pos
+                r_remain_ner = [ner_group[i['ner']] if not i.get('ner') in [None, 'O'] else i['word']
+                                for i in api_tags[i:current_i + 1]] + r_remain_ner
             if current_b is not None:
                 if api_tags[i]['pos'] == 'IN' and bio[i] == 'o':
-                    try:
-                        timex = [t.get('timex') for t in api_tags[i:current_i + 1] if 'timex' in t][0]['value']
-                    except IndexError:
-                        # timex가 없다면?
-                        timex = None
-                    tmp = {
-                        # 단어 ex) 'in 1987'
-                        'word': ' '.join([t['word'] for t in api_tags[i:current_i + 1]]),
-                        # 원형 ex) 'in 1987'
-                        'lemma': ' '.join([t['lemma'] for t in api_tags[i:current_i + 1]]),
-                        # 품사 ex) ['NR']
-                        'pos': [t['pos'] for t in api_tags[i:current_i + 1]],
-                        # 개체명 ex) 'DATE'
-                        'ner': self.get_ner([t['ner'] for t in api_tags[i:current_i + 1]]),
-                        # 수정된 개체명 ex) in 1500x -> ['in 15XX']
-                        'normalizedNER': [t.get('normalizedNER') for t in api_tags[i:current_i + 1]],
-                        # 개체명이 시간일 경우 x 표현식으로 표현된 시간 ex) 1500x -> ['15XX'] (1500년대라는 뜻)
-                        'timex': timex
-                    }
-                    r_addition.insert(0, tmp)
+                    if api_tags[i]['word'] not in notIN:  # 현재 전치사가 고려하지 않을 전치사 목록에 있지 않아야 함
+                        try:
+                            timex = [t.get('timex') for t in api_tags[i:current_i + 1] if 'timex' in t][0]['value']
+                        except IndexError:
+                            # timex가 없다면?
+                            timex = None
+                        tmp = {
+                            # 단어 ex) 'in 1987'
+                            'word': ' '.join([t['word'] for t in api_tags[i:current_i + 1]]),
+                            # 원형 ex) 'in 1987'
+                            'lemma': ' '.join([t['lemma'] for t in api_tags[i:current_i + 1]]),
+                            # 품사 ex) ['NR']
+                            'pos': [t['pos'] for t in api_tags[i:current_i + 1]],
+                            # 개체명 ex) 'DATE'
+                            'ner': self.get_ner([t['ner'] for t in api_tags[i:current_i + 1]]),
+                            # 수정된 개체명 ex) in 1500x -> ['in 15XX']
+                            'normalizedNER': [t.get('normalizedNER') for t in api_tags[i:current_i + 1]],
+                            # 개체명이 시간일 경우 x 표현식으로 표현된 시간 ex) 1500x -> ['15XX'] (1500년대라는 뜻)
+                            'timex': timex
+                        }
+                        r_addition.insert(0, tmp)
+                    else:
+                        # 고려하지 않을 목록에 있는 전치사라면? -> 현재 개체명 스킵
+                        r_remain = [i['word'] for i in api_tags[i:current_i + 1]] + r_remain
+                        r_remain_pos = [(poses[i], (api_tags[i],)) for i in
+                                        range(len(poses[i:current_i + 1]))] + r_remain_pos
+                        r_remain_ner = [ner_group[i['ner']] if not i.get('ner') in [None, 'O'] else i['word']
+                                        for i in api_tags[i:current_i + 1]] + r_remain_ner
                     current_b = current_i = None
             else:
                 r_remain.insert(0, api_tags[i]['word'])
-                r_remain_pos.insert(0, (poses[i], api_tags[i]))
+                r_remain_pos.insert(0, (poses[i], (api_tags[i],)))
+                if bio[i] != 'o':
+                    r_remain_ner.insert(0, api_tags[i]['ner'])
+                else:
+                    r_remain_ner.insert(0, api_tags[i]['word'])
         if current_b is not None:
             # 다 돌았는데 추가 안 된 부분이 있다면?
             r_remain = [i['word'] for i in api_tags[i:current_i + 1]] + r_remain
-            r_remain_pos = [(poses[i], api_tags[i]) for i in range(len(poses[i:current_i + 1]))] + r_remain_pos
+            r_remain_pos = [(poses[i], (api_tags[i],)) for i in range(len(poses[i:current_i + 1]))] + r_remain_pos
+            r_remain_ner = [ner_group[i['ner']] if not i.get('ner') in [None, 'O'] else i['word']
+                            for i in api_tags[i:current_i + 1]] + r_remain_ner
 
         r_remain_pos = self.like(r_remain, r_remain_pos)
+        r_remain_ner = self.like(r_remain, r_remain_ner)
 
         self.printf('get bios, poses:', poses)
         self.printf('get bios, r_addition:', r_addition)
         self.printf('get bios, r_remain:', r_remain)
         self.printf('get bios, r_remain_pos:', r_remain_pos)
-        return r_remain, r_remain_pos, r_addition
+        self.printf('get bios, r_remain_ner:', r_remain_ner)
+        return r_remain, r_remain_pos, r_addition, r_remain_ner
 
     @staticmethod
     def get_ner(ners):
         # ners[string] 중 대표 ner 하나를 골라서 반환한다.
         # 대표 ner을 고르는 기준은 ner_priority의 앞에 위치한 순이다.
         return sorted(ners, key=lambda x: ner_priority.index(x))[0]
+
+    @staticmethod
+    def get_antonyms(word, pos='v'):
+        # word에 대한 반의어를 리스트 형식으로 반환한다.
+        # ex) f('like') -> ['dislike']
+        r = []
+        for syn in wordnet.synsets(word, pos):  # synset 검색
+            for lm in syn.lemmas():  # 원형으로 변환
+                if lm.antonyms():  # 반의어 있으면? -> 리스트에 추가
+                    r.append(lm.antonyms()[0].name().replace('_', ' '))
+        return r

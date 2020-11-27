@@ -37,7 +37,7 @@ grammar = r"""
 
 
 # 품사 우선순위. 한 리스트에 여러 품사가 있을 경우 priority의 앞쪽에 위치한 품사가 대표 품사가 된다.
-priority = ['A-TIME', 'NPB', 'DDNP', 'INNP', 'NP', 'VP', 'PP', 'JJJ', 'WRB']
+priority = ['A-TIME', 'NPB', 'DDNP', 'INNP', 'NP', 'VP', 'PP', 'JJJ', 'WRB', 'RB']
 ner_priority = ['LOCATION', 'DATE', 'TIME', 'DURATION', 'MONEY', 'PERCENT',
                 'MISC', 'ORGANIZATION', 'PERSON', 'NUMBER', 'ORDINAL', 'SET',
                 'EMAIL', 'URL', 'CITY', 'STATE_OR_PROVINCE', 'COUNTRY', 'NATIONALITY',
@@ -48,11 +48,43 @@ pos_group = {
     'INNP': 'N', 'NP': 'N', 'DDNP': 'N', 'NPB': 'N',
     'VP': 'V',
     'PP': 'P',
-    'JJJ': 'J',
+    'JJJ': 'J', 'RB': 'J',
     'A-TIME': 'A', 'A-NOT': 'A'  # 추가적인 정보
 }
 replace_pos = {
     'not': 'A-NOT',  # 'not'이라는 단어를 품사 'A-NOT'으로 replace
+}
+ner_group = {
+    'ORGANIZATION': 'COUNTRY',
+    'COUNTRY': 'COUNTRY',
+    'NATIONALITY': 'COUNTRY',
+    'RELIGION': 'COUNTRY',
+    'LOCATION': 'COUNTRY',
+    'CITY': 'COUNTRY',
+    'STATE_OR_PROVINCE': 'COUNTRY',
+    'PERSON': 'COUNTRY',
+
+    'DATE': 'TIME',
+    'TIME': 'TIME',
+
+    'PERCENT': 'NUMBER',
+    'NUMBER': 'NUMBER',
+    'ORDINAL': 'NUMBER',
+
+    'EMAIL': 'TEXT',
+    'URL': 'TEXT',
+    'TITLE': 'TEXT',
+    'IDEOLOGY': 'TEXT',
+
+    'MISC': 'MISC',
+    'MONEY': 'MONEY',
+    'SET': 'SET',
+    'CRIMINAL_CHARGE': 'CRIMINAL_CHARGE',
+    'CAUSE_OF_DEATH': 'CAUSE_OF_DEATH',
+    'HANDLE': 'HANDLE',
+    'DURATION': 'DURATION',
+    'O': 'O',
+    None: None,
 }
 
 # 제거할 품사들
@@ -74,3 +106,6 @@ relatives = ['that', 'which', 'who', 'whom', 'whose']
 
 # be 동사 목록
 linking_verbs = ['be', 'is', 'were', 'was']
+
+# 목적어절에서 개체명 추출할 때 고려하지 않을 전치사 목록
+notIN = ['of']

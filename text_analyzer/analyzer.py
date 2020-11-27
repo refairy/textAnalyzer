@@ -23,10 +23,11 @@ class Analyzer(StringUtils):
         self.cp = nltk.RegexpParser(grammar)  # grammar parser
         self.coref = Coref()  # 대명사 제거
 
-        self.debug = True
+        self.debug = False
 
-    def analyze(self, sentence):
+    def analyze(self, sentence, augment=True):
         # sentence를 분석한다.
+        # augment=False : substitute_equal 등의 정보 확장을 하지 않고 그대로 반환한다.
         if self.is_bad_sentence(sentence):
             # 예외 문장일 경우
             return -1
@@ -95,12 +96,23 @@ class Analyzer(StringUtils):
         clauses, poses, repreposes, additions, addition_poses = \
             self.unique(clauses, poses, repreposes, additions, addition_poses)
 
+        # 주어만 있는 것 제거
+        clauses, poses, repreposes, additions, addition_poses = \
+            self.no_one(clauses, poses, repreposes, additions, addition_poses)
+
         # 출력
         for i in clauses:
             self.printf(i)
 
+        # 동사의 반의어 고려하여 정보 확장 (기존 동사 -> not + 반의어)
+        if augment:
+            clauses, poses, repreposes, additions, addition_poses = \
+                self.substitute_antonyms(clauses, poses, repreposes, additions, addition_poses)
+
         # A = B이고 B = C이면 A = C라는 논리 적용하여 정보 확장
-        self.substitute_equal(clauses, poses, repreposes, additions, addition_poses)
+        if augment:
+            clauses, poses, repreposes, additions, addition_poses = \
+                self.substitute_equal(clauses, poses, repreposes, additions, addition_poses)
 
         # 중복 제거
         clauses, poses, repreposes, additions, addition_poses = \
@@ -136,7 +148,22 @@ class Analyzer(StringUtils):
         r = []
         trues = []
         for i in range(len(lists[0])):
-            trues.append(not lists[0][i] in lists[0][:i])
+            trues.append(not lists[0][i] in lists[0][:i] and not lists[0][i] in lists[0][i+1:])
+        for i in range(len(lists)):
+            tmp = []
+            for j in range(len(lists[i])):
+                if trues[j]:
+                    tmp.append(lists[i][j])
+            r.append(tmp)
+        return r
+
+    @staticmethod
+    def no_one(*lists):
+        # lists[0]의 원소 중 길이가 1인 것을 제외한다.
+        r = []
+        trues = []
+        for i in range(len(lists[0])):
+            trues.append(len(lists[0][i]) >= 2)
         for i in range(len(lists)):
             tmp = []
             for j in range(len(lists[i])):
@@ -162,8 +189,7 @@ class Analyzer(StringUtils):
                 r['addition_poses'].append(addition_poses[i])
         return r['clauses'], r['poses'], r['repreposes'], r['additions'], r['addition_poses']
 
-    @staticmethod
-    def substitute_equal(clauses, poses, repreposes, additions, addition_poses):
+    def substitute_equal(self, clauses, poses, repreposes, additions, addition_poses):
         # A be B, B be C -> A be C 같은 논리를 적용햐여 'be'라는 동사를 갖는 clauses들끼리 대입한다.
         r = {
             'clauses': [], 'poses': [], 'repreposes': [], 'additions': [], 'addition_poses': []
@@ -174,10 +200,19 @@ class Analyzer(StringUtils):
             if clauses[i][1] in linking_verbs:
                 # A be B 형식인가?
                 a, b = clauses[i][0], clauses[i][2]
+                if additions[i]:
+                    # 추가정보가 있으면? -> 패스
+                    continue
                 for j in range(len(clauses)):
                     if i == j:
                         continue
                     for k in range(len(clauses[j])):
+                        if k != 0:
+                            # 주어만 교체 가능!!
+                            # 목적어구 교체하면 개체명 정보 담고 있는 addition_poses를 어떻게 처리해야 할지 애매해짐.
+                            # 주어를 목적어구에 replace하는 경우 주어는 addition_poses가 없으므로 문제 발생함.
+                            # -> 목적어구를 주어로 교체 O, 주어를 주어로 교체 O, 주어를 목적어구로 교체 X
+                            continue
                         if clauses[j][k] == a:
                             target = clauses[j].copy()
                             target[k] = b
@@ -206,6 +241,42 @@ class Analyzer(StringUtils):
                             r['additions'].append(target.copy())
                             target = addition_poses[j].copy()
                             r['addition_poses'].append(target.copy())
+        # 결과 적용하여 반환
+        clauses += r['clauses']
+        poses += r['poses']
+        repreposes += r['repreposes']
+        additions += r['additions']
+        addition_poses += r['addition_poses']
+        return clauses, poses, repreposes, additions, addition_poses
+
+    def substitute_antonyms(self, clauses, poses, repreposes, additions, addition_poses):
+        # A is B -> A not differ B 같이 동사를 반의어로 바꾸고 not을 붙인다.
+        r = {
+            'clauses': [], 'poses': [], 'repreposes': [], 'additions': [], 'addition_poses': []
+        }
+        for i in range(len(clauses)):
+            if len(clauses[i]) < 2:
+                # 동사가 없으면? -> 패스
+                continue
+            antonyms = self.get_antonyms(clauses[i][1])
+            for antonym in antonyms:
+                # 추가 정보에 NOT 추가
+                new_add = additions[i].copy()
+                if 'A-NOT' in [d['ner'] for d in new_add]:
+                    # NOT이 이미 있으면 -> 제거
+                    del new_add[[d['ner'] for d in new_add].index('A-NOT')]
+                else:
+                    # NOT이 없으면 -> 추가
+                    new_add.append({
+                        "word": "not", "lemma": "not", "pos": "NP", "ner": "A-NOT",
+                        "normalizedNER": [None], "timex": None
+                    })
+                r['clauses'].append([clauses[i][0], antonym] + clauses[i][2:])  # 반의어 동사 추가
+                r['poses'].append(poses[i].copy())
+                r['repreposes'].append(repreposes[i].copy())
+                r['additions'].append(new_add)
+                r['addition_poses'].append(addition_poses[i].copy())
+
         # 결과 적용하여 반환
         clauses += r['clauses']
         poses += r['poses']
@@ -334,7 +405,6 @@ class Analyzer(StringUtils):
                             remove_i.append(i - len(remove_i))
                         elif not target_idx.count('N') == 0:  # 앞 문장에 명사구가 없으면? -> 패스
                             target_idx = -list(reversed(target_idx)).index('N') - 1  # 앞 문장의 마지막 명사구 index
-                            print(clause)
                             target = r_clauses[i + ai][target_idx]  # 앞 문장 명사구
                             r_clauses[i] = [target, 'be', clause[0]]
                             r_poses[i] = [r_poses[i + ai][target_idx], 'VP', pos[0]]
@@ -373,18 +443,15 @@ class Analyzer(StringUtils):
                         if len(clauses) == j or len(pos) == j:
                             # 리스트 모두 돌았다면 (중간에 del할 수 있으므로 이렇게 따로 지정해줘야 함)
                             break
-
                         bio = self.get_bio(pos[j])  # 개체명 인식을 기반으로 bio 만들고 추가적인 정보 추출
-                        # bio = (추가적인 정보를 제외하고 남은 것들, bio[0]의 pos, 추가적인 정보)
+                        # bio = (추가적인 정보를 제외하고 남은 것들, bio[0]의 pos, 추가적인 정보, 개체명만 replace한 bio[0])
                         if bio[0]:
                             r_clauses[i][j] = bio[0]
+                            r_poses[i][j] = bio[1]
+                            r_addition_poses[i].extend(bio[3].copy())
                         else:
                             # 추가적인 정보를 제외하고 남은 게 하나도 없으면 -> 그냥 삭제
                             del r_clauses[i][j]
-                        if bio[0]:
-                            r_poses[i][j] = bio[1]
-                        else:
-                            # 추가적인 정보를 제외하고 남은 게 하나도 없으면 -> 그냥 삭제
                             del r_poses[i][j]
                         r_additions[i].extend(bio[2])
                         clause = r_clauses[i]
@@ -427,31 +494,47 @@ class Analyzer(StringUtils):
 
         return r_clauses, r_poses, r_repreposes, r_additions, r_addition_poses
 
+    def __call__(self, sentence, augment=True):
+        # self.analyze() -> dict 형식으로 반환
+        analyze_result = self.analyze(sentence, augment=augment)
+
+        r = []
+        for i in range(len(analyze_result[0])):
+            tmp = [analyze_result[j][i] for j in range(len(analyze_result))]
+            r.append({'info': tmp[0], 'add': tmp[3], 'ner': tmp[4]})
+        return r
+
 
 if __name__ == "__main__":
-    db = FactsDB(port=27017)  # db 연결 (MongoDB)
+    db = FactsDB('../koreanfacts/db')  # db 연결 (KoreanFactsDB)
+    db.delete('dokdo')  # (dokdo 그룹) db 초기화
     anal = Analyzer()  # 텍스트 분석기
+
+    text = 'Dokdo is often miscalled Takeshima in Japan.'
     result = anal.analyze(text)  # 분석
 
     for i in range(len(result[0])):
         # 결과 DB에 저장 및 출력
-        d = {}
         tmp = [result[j][i] for j in range(len(result))]
-        db.insert({'group': 'dokdo', 'info': tmp[0], 'add': tmp[3]})  # 저장
-        [print(i) for i in tmp]  # 출력
+        print(tmp[0])
+        print(tmp[3])
+        print(tmp[4])
+        # db.insert('dokdo', {'info': tmp[0], 'add': tmp[3], 'ner': tmp[4]})  # 저장
 
     # 위 작업 한 번 더 반복
-    text = 'Dokdo which is erroneously called Takeshima in Japan until now, ' \
-           'isn\'t Korean territory. The Liancourt Rocks are a group of small islets in the Sea of Japan. ' \
+    text = 'Dokdo is Takeshima. Dokdo which is erroneously called Takeshima in Japan until now, ' \
+           'is Korean territory. The Liancourt Rocks are a group of small islets in the Sea of Japan. ' \
            'While South Korea controls the islets, its sovereignty over them is contested by Japan.'
     result = anal.analyze(text)  # 분석
 
+    print()
     for i in range(len(result[0])):
         # 결과 DB에 저장 및 출력
-        d = {}
         tmp = [result[j][i] for j in range(len(result))]
-        db.insert({'group': 'dokdo', 'info': tmp[0], 'add': tmp[3]})  # 저장
-        [print(i) for i in tmp]  # 출력
+        print(tmp[0])
+        print(tmp[3])
+        print(tmp[4])
 
-    db.pprint(db.find())  # DB 출력
-    db.delete()  # DB 초기화
+        db.insert('dokdo', {'info': tmp[0], 'add': tmp[3], 'ner': tmp[4]})  # 저장
+
+    db.pprint(db.get('dokdo'))  # DB 출력

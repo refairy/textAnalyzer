@@ -1,7 +1,7 @@
 """
 test cases
 """
-text = 'The history of the United States started with the arrival of Native Americans around 15,000 BC. Numerous indigenous cultures formed, and many disappeared in the 1500s.'
+#text = 'The history of the United States started with the arrival of Native Americans around 15,000 BC. Numerous indigenous cultures formed, and many disappeared in the 1500s.'
 #text = 'In 1987, Plastic isn\'t a word that originally meant “pliable and easily shaped”. It only recently became a name for a category of materials called polymers in the 1500s, and The word polymer means “of many parts,” and polymers are made of long chains of molecules. Polymers abound in nature. Cellulose, the material that makes up the cell walls of plants, is a very common natural polymer.'
 #text = "In 1885 at Pemberton's Eagle Drug and Chemical House, his drugstore in Columbus, Georgia, he registered Pemberton's French Wine Coca nerve tonic."
 #text = "It is also worth noting that a Spanish drink that called \"Kola Coca\" that was presented at a contest in Philadelphia in 1885, a year before the official birth of Coca-Cola."
@@ -17,7 +17,7 @@ text = 'The history of the United States started with the arrival of Native Amer
 #text = 'The National Liberation Day of Korea is a holiday that celebrated annually on August 15 in both South and North Korea.'
 #text = 'It commemorates Victory over Japan Day, when at the end of World War II, the U.S. and Soviet forces helped end three hundreds years of Japanese occupation and colonial rule of Korea that lasted from 1910-1945.'
 #text = "I will eat coffee, bread and cake which he loves."
-text = 'Comfort women were mainly women and girls that forced into sexual slavery by the Imperial Japanese Army in occupied countries and territories before and during World War II in 1930, or who participated in the earlier program of voluntary prostitution. women that were forced to provide sex to Japanese soldiers before and during World War II  in 1930. '
+#text = 'Comfort women were mainly women and girls that forced into sexual slavery by the Imperial Japanese Army in occupied countries and territories before and during World War II in 1930, or who participated in the earlier program of voluntary prostitution. women that were forced to provide sex to Japanese soldiers before and during World War II  in 1930. '
 #text += 'In response, The Japan Times promised to conduct a thorough review of the description and announce its conclusions in Japanese Parliament. '
 #text += 'Previously, The Japan Times described “comfort women” simply as “women who were forced to provide sex to Japanese soldiers before and during World War II in 1930.” '
 #text = "women that were forced to provide sex to Japanese soldiers before and during World War II."
@@ -30,3 +30,4 @@ text = 'Comfort women were mainly women and girls that forced into sexual slaver
 #text = "I met my uncle, and he bought me this coat."
 #text = "In 1987, I didn't do that in 1982"
 #text = 'The Liancourt Rocks are clearly a group of small islets in the Sea of Japan until February 17.'
+text = "In 1987, Takeshima is indisputably an inherent part of the territory of Japan in Japanese sea, in light of historical facts and based on international law."
