@@ -46,7 +46,7 @@ class FactsDB:
                 if d not in cursor:
                     cursor.append(d)
         with io.open(filename, 'w', encoding='utf-8') as f:
-            json.dump(cursor, f, indent=4)
+            json.dump(cursor, f)
 
     @staticmethod
     def pprint(data: Union[List[Dict], Dict]) -> None:
