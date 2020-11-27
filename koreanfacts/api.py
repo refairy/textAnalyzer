@@ -56,15 +56,17 @@ class FactsDB:
         if type(data) == list:
             for d in data:
                 formatted = \
-                        f'info:         \t{d["info"]}\n' \
-                        f'add:          \t{d["add"]}\n'
+                    f'info:         \t{d["info"]}\n' \
+                    f'add:          \t{d["add"]}\n' \
+                    f'ner:          \t{d["ner"]}\n'
                 print(formatted)
 
         elif type(data) == dict:
             formatted = ""
             formatted += \
-                    f'info:         \t{data["info"]}\n' \
-                    f'add:          \t{data["add"]}\n'
+                f'info:         \t{data["info"]}\n' \
+                f'add:          \t{data["add"]}\n' \
+                f'ner:          \t{data["ner"]}\n'
             print(formatted)
 
     def delete(self, group: str) -> None:
