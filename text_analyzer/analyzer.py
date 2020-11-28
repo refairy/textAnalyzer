@@ -359,10 +359,14 @@ class Analyzer(StringUtils):
                         r_poses[i] = deepcopy(r_poses[i + ai])  # 앞 문장 복사
                         r_repreposes[i] = deepcopy(r_repreposes[i + ai])  # 앞 문장 복사
                         r_additions[i] = [deepcopy(r_additions[i + ai][add_i])]
+                        clauses_i_0 = clauses[i][0]
+                        if isinstance(clauses_i_0, list):
+                            # 주어가 리스트라면? -> ' '으로 join
+                            clauses_i_0 = ' '.join(self.totally_flatten(clauses[i][0]))
                         r_additions[i][0]['word'] = \
-                            r_additions[i+ai][add_i]['word'].split()[0] + ' ' + clauses[i][0]
+                            r_additions[i+ai][add_i]['word'].split()[0] + ' ' + clauses_i_0
                         r_additions[i][0]['lemma'] = \
-                            r_additions[i+ai][add_i]['lemma'].split()[0] + ' ' + clauses[i][0]
+                            r_additions[i+ai][add_i]['lemma'].split()[0] + ' ' + clauses_i_0
                         if is_not:
                             # not이 있으면 추가
                             r_additions[i].append(deepcopy(not_addition))
@@ -551,7 +555,7 @@ class Analyzer(StringUtils):
                 for j, reprep in enumerate(reprepos):
                     if j >= 2:
                         # 목적어구일 때 (주어, 동사구에는 해당X)
-                        if len(clauses) >= j or len(pos) >= j:
+                        if len(clauses) <= j or len(pos) <= j:
                             # 리스트 모두 돌았다면 (중간에 del할 수 있으므로 이렇게 따로 지정해줘야 함)
                             break
                         bio = self.get_bio(pos[j])  # 개체명 인식을 기반으로 bio 만들고 추가적인 정보 추출
@@ -631,6 +635,7 @@ if __name__ == "__main__":
     anal = Analyzer()  # 텍스트 분석기
 
     text = 'Dokdo is often miscalled Takeshima in Japan.'
+    text = 'Takeshima is indisputably an inherent part of the territory of Japan, in light of historical facts and based on international law'
     result = anal.analyze(text)  # 분석
 
     for i in range(len(result[0])):
@@ -640,7 +645,7 @@ if __name__ == "__main__":
         print(tmp[3])
         print(tmp[4])
         # db.insert('dokdo', {'info': tmp[0], 'add': tmp[3], 'ner': tmp[4]})  # 저장
-    
+
     # 위 작업 한 번 더 반복
     text = 'Dokdo is Takeshima. Dokdo which is erroneously called Takeshima in Japan until now, ' \
            'is Korean territory. The Liancourt Rocks are a group of small islets in the Sea of Japan. ' \

@@ -162,7 +162,7 @@ if __name__ == "__main__":
     }, db.get('dokdo')))
 
     print(compare({
-        'info': ['Takeshima', 'is', ['inherent', 'part', 'of', 'territory', 'of', 'Japan']],
+        'info': ['Takeshima', 'is', [['inherent part', ['of', 'territory']], ['of', 'Japan']]],
         'add': [{'word': 'in Japan', 'lemma': 'of Japan', 'pos': ['IN', 'NNP'], 'ner': 'COUNTRY', 'normalizedNER': [None, None], 'timex': None}],
         'ner': ['Takeshima', 'is', ['inherent', 'part', 'of', 'territory', 'of', 'COUNTRY']]
     }, db.get('dokdo')))
