@@ -64,13 +64,13 @@ class Check:
                     continue
 
                 # 정보 확장, 대명사 제거 하지 않고 분석
-                try:
-                    results = anal('', augment=False,  # sentence 대신 토크나이징된 것 들어가므로 sentence는 무슨 값이든 상관X
+                # try:
+                results = anal('', augment=False,  # sentence 대신 토크나이징된 것 들어가므로 sentence는 무슨 값이든 상관X
                                    coref=False, preprocessing=([tk], api_tags[i], quotes))
-                except Exception as err:
-                    # 오류날 경우 -> 무시
-                    print("Error: {} (in check() -> anal())".format(err))
-                    continue
+                # except Exception as err:
+                #     # 오류날 경우 -> 무시
+                #     print("Error: {} (in check() -> anal())".format(err))
+                #     continue
 
                 if results == -1:
                     # bad sentence (일부러 분석 안 하도록 설정한 문장)일 경우 ex) 의문문
