@@ -36,7 +36,6 @@ class Check:
         for chunk_i in range(0, len(sentences), OPT2['n_chunk']):  # NER 분석을 하나씩 하면 요청이 많아지므로 n_chunk개 씩 합쳐서 진행
             current_sentences = sentences[chunk_i:OPT2['n_chunk']+chunk_i]  # 분석할 문장들
             current_string = join_sentences(current_sentences)  # 분석할 문장들 합치기
-            print(current_string)
             tokens, api_tags, quotes = anal.preprocessing(current_string, coref=False)  # 전처리 + NER
             api_tags = anal.like(tokens, api_tags)  # api_tags의 형태를 tokens와 동일하게 변경
             preprocessed_sentences = self.simple_preprocessings(current_sentences)  # 전처리 (NER은 안 함)
@@ -61,8 +60,13 @@ class Check:
                     continue
 
                 # 정보 확장, 대명사 제거 하지 않고 분석
-                results = anal('', augment=False,  # sentence 대신 토크나이징된 것 들어가므로 sentence는 무슨 값이든 상관X
-                               coref=False, preprocessing=([tk], api_tags[i], quotes))
+                try:
+                    results = anal('', augment=False,  # sentence 대신 토크나이징된 것 들어가므로 sentence는 무슨 값이든 상관X
+                                   coref=False, preprocessing=([tk], api_tags[i], quotes))
+                except Exception as err:
+                    # 오류날 경우 -> 무시
+                    print("Error: {} (in check() -> anal())".format(err))
+                    continue
 
                 if results == -1:
                     # bad sentence (일부러 분석 안 하도록 설정한 문장)일 경우 ex) 의문문
