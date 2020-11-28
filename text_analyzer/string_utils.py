@@ -358,6 +358,8 @@ class StringUtils:
                 continue
             bio.append('o')
 
+        self.printf("bio:", bio)
+
         current_b = None
         current_i = None
         r_remain = []
@@ -377,10 +379,10 @@ class StringUtils:
             if current_b is not None and current_b - i >= 3:
                 # 현재 포인터가 b와 너무 멀리 떨어져 있으면
                 current_b = None
-                r_remain = [i['word'] for i in api_tags[i:current_i+1]] + r_remain
-                r_remain_pos = [(poses[i], (api_tags[i],)) for i in range(len(poses[i:current_i+1]))] + r_remain_pos
-                r_remain_ner = [ner_group[i['ner']] if not i.get('ner') in [None, 'O'] else i['word']
-                                for i in api_tags[i:current_i + 1]] + r_remain_ner
+                r_remain = [j['word'] for j in api_tags[i:current_i+1]] + r_remain
+                r_remain_pos = [(poses[j], (api_tags[j],)) for j in range(i, current_i + 1)] + r_remain_pos
+                r_remain_ner = [ner_group[j['ner']] if not j.get('ner') in [None, 'O'] else j['word']
+                                for j in api_tags[i:current_i + 1]] + r_remain_ner
             if current_b is not None:
                 if api_tags[i]['pos'] == 'IN' and bio[i] == 'o':
                     if api_tags[i]['word'] not in notIN:  # 현재 전치사가 고려하지 않을 전치사 목록에 있지 않아야 함
@@ -388,6 +390,9 @@ class StringUtils:
                             timex = [t.get('timex') for t in api_tags[i:current_i + 1] if 'timex' in t][0]['value']
                         except IndexError:
                             # timex가 없다면?
+                            timex = None
+                        except KeyError:
+                            # timex가 예외적이라면? ex) {'tid': 't16', 'type': 'DATE', 'altValue': 'THIS P1Y OFFSET P-1Y'}
                             timex = None
                         tmp = {
                             # 단어 ex) 'in 1987'
@@ -406,11 +411,11 @@ class StringUtils:
                         r_addition.insert(0, tmp)
                     else:
                         # 고려하지 않을 목록에 있는 전치사라면? -> 현재 개체명 스킵
-                        r_remain = [i['word'] for i in api_tags[i:current_i + 1]] + r_remain
-                        r_remain_pos = [(poses[i], (api_tags[i],)) for i in
-                                        range(len(poses[i:current_i + 1]))] + r_remain_pos
-                        r_remain_ner = [ner_group[i['ner']] if not i.get('ner') in [None, 'O'] else i['word']
-                                        for i in api_tags[i:current_i + 1]] + r_remain_ner
+                        r_remain = [j['word'] for j in api_tags[i:current_i + 1]] + r_remain
+                        r_remain_pos = [(poses[j], (api_tags[j],)) for j in
+                                        range(i, current_i + 1)] + r_remain_pos
+                        r_remain_ner = [ner_group[j['ner']] if not j.get('ner') in [None, 'O'] else j['word']
+                                        for j in api_tags[i:current_i + 1]] + r_remain_ner
                     current_b = current_i = None
             else:
                 r_remain.insert(0, api_tags[i]['word'])
@@ -421,10 +426,10 @@ class StringUtils:
                     r_remain_ner.insert(0, api_tags[i]['word'])
         if current_b is not None:
             # 다 돌았는데 추가 안 된 부분이 있다면?
-            r_remain = [i['word'] for i in api_tags[i:current_i + 1]] + r_remain
-            r_remain_pos = [(poses[i], (api_tags[i],)) for i in range(len(poses[i:current_i + 1]))] + r_remain_pos
-            r_remain_ner = [ner_group[i['ner']] if not i.get('ner') in [None, 'O'] else i['word']
-                            for i in api_tags[i:current_i + 1]] + r_remain_ner
+            r_remain = [j['word'] for j in api_tags[i:current_i + 1]] + r_remain
+            r_remain_pos = [(poses[j], (api_tags[j],)) for j in range(i, current_i + 1)] + r_remain_pos
+            r_remain_ner = [ner_group[j['ner']] if not j.get('ner') in [None, 'O'] else j['word']
+                            for j in api_tags[i:current_i + 1]] + r_remain_ner
 
         r_remain_pos = self.like(r_remain, r_remain_pos)
         r_remain_ner = self.like(r_remain, r_remain_ner)
@@ -452,3 +457,16 @@ class StringUtils:
                 if lm.antonyms():  # 반의어 있으면? -> 리스트에 추가
                     r.append(lm.antonyms()[0].name().replace('_', ' '))
         return r
+
+    @staticmethod
+    def neighbor_is(people, i, who):
+        # people[i] 다음이 who인가?
+        # 단, people[i] == people[i+1]이라면 다다음 값과 who를 바교한다.
+        # ex) f([1,2,3,4], 1, 3) -> True (index 1 다음이 3인가?)
+        #     f([1,2,2,3,4], 1, 3) -> True (수가 중복되면 다음으로 건너뜀)
+        for p in people[i+1:]:
+            if people[i] != p:
+                return who == p
+            elif people[i] == who:
+                return True
+        return False

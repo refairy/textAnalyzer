@@ -24,13 +24,14 @@ class Check:
     def __init__(self):
         self.progress = 0  # 몇 개의 문장 분석 완료했는가?
         self.response = None  # check() 결과
+        self.finished = False
 
     def check(self, sentences: list):
         # ex) sentences = ['hello my name is', 'blah blah blah.', ...]
 
-        self.response = None
+        self.finished = False
+        self.response = []  # 최종 결과 ex) [ {'origin': ..}, {'origin': ..}, ..]
         self.progress = 0
-        response = []  # 최종 결과 ex) [ {'origin': ..}, {'origin': ..}, ..]
 
         # 대명사 제거
         sentences, sentences_d = self.coreference(sentences)
@@ -38,8 +39,9 @@ class Check:
         # 오류 검출
         for chunk_i in range(0, len(sentences), OPT2['n_chunk']):  # NER 분석을 하나씩 하면 요청이 많아지므로 n_chunk개 씩 합쳐서 진행
             self.progress += 1
-            current_sentences = sentences[chunk_i:OPT2['n_chunk']*(chunk_i+1)]  # 분석할 문장들
+            current_sentences = sentences[chunk_i:OPT2['n_chunk']+chunk_i]  # 분석할 문장들
             current_string = join_sentences(current_sentences)  # 분석할 문장들 합치기
+            print(current_string)
             tokens, api_tags, quotes = anal.preprocessing(current_string, coref=False)  # 전처리 + NER
             api_tags = anal.like(tokens, api_tags)  # api_tags의 형태를 tokens와 동일하게 변경
             preprocessed_sentences = self.simple_preprocessings(current_sentences)  # 전처리 (NER은 안 함)
@@ -63,10 +65,12 @@ class Check:
                     continue
 
                 # 정보 확장, 대명사 제거 하지 않고 분석
-                results = anal(current_string, augment=False,
+                results = anal('', augment=False,  # sentence 대신 토크나이징된 것 들어가므로 sentence는 무슨 값이든 상관X
                                coref=False, preprocessing=([tk], api_tags[i], quotes))
 
-                # print('analyzing result:', results)
+                if results == -1:
+                    # bad sentence (일부러 분석 안 하도록 설정한 문장)일 경우 ex) 의문문
+                    continue
 
                 for result in results:
                     # result : data 하나 ex) {'info': ...}
@@ -89,11 +93,11 @@ class Check:
                                     "corrected": corrected,  # 올바른 문장
                                     "confidence": 1.0  # confidence (측정 기능 안 만들어서 1.0로 고정)
                                 }
-                                response.append(report)  # response에 dict 추가
+                                self.response.append(report)  # response에 dict 추가
                                 print('report:', report)
 
-        self.response = response.copy()  # 결과 저장
-        return response
+        self.finished = True  # 종료 알리기
+        return self.response
 
     @staticmethod
     def simple_preprocessings(sentences: list):
@@ -135,42 +139,44 @@ class Check:
 
 
 if __name__ == "__main__":
-    sentences =['Skip to main content FAQ Site Map Links ', 'Countries & Regions',
-                'Top\xa0>\xa0Foreign Policy\xa0>\xa0Others\xa0>\xa0Japanese Territory\xa0>\xa0Takeshima',
-                'April 23, 2020', '  ', 'Japan’s Consistent Position on the Territorial Sovereignty over Takeshima',
-                'Takeshima is indisputably an inherent part of the territory of Japan, in light of '
-                'historical facts and based on international law.',
-                'The Republic of Korea has been occupying Takeshima with no basis in international law. '
-                'Any measures the Republic of Korea takes regarding Takeshima based on such an illegal '
-                'occupation have no legal justification.',
-                'Japan will continue to seek the settlement of the dispute over territorial sovereignty over '
-                'Takeshima on the basis of international law in a calm and peaceful manner.',
-                "Note: The Republic of Korea has never demonstrated any clear basis for its claims that it had taken "
-                "effective control over Takeshima prior to Japan's effective control over Takeshima and reaffirmation "
-                "of its territorial sovereignty in 1905.",
-                'Video:Takeshima - Seeking a Solution based on Law and Dialogue',
-                'Pamphlet: Takeshima\u3000(10 pages) (PDF)', '10 points to understand the Takeshima Dispute (PDF)',
-                'Recognition of Takeshima', 'Sovereignty over Takeshima', 'Prohibition of Passage to Utsuryo Island',
-                'Incorporation of Takeshima into Shimane Prefecture', 'Takeshima Immediately After World War II',
-                'Treatment of Takeshima in the San Francisco Peace Treaty',
-                'Takeshima as a Bombing Range for the U.S. Forces',
-                'Establishment of “Syngman Rhee Line” and Illegal Occupation of Takeshima by the Republic of Korea',
-                'Proposal of Referral to the International Court of Justice', 'Q&A About the Takeshima Dispute',
-                'Japan-Republic of Korea Relations', ' (Open a New Window)', 'Back to Japanese Territory',
-                'Embassies & Consulates', 'About this Site', 'Interviews & Articles',
-                "Japan's Security / Peace & Stability of the International Community", 'Global Issues & ODA',
-                'Countries & Regions', 'Latin America and the Caribbean', 'Residing in Japan',
-                'Information about Japan (Links)', 'The Hague Convention',
-                'Legal Matters Accessibility Privacy Policy About this Site',
-                'Copyright © Ministry of Foreign Affairs of Japan',
-                'Ministry of Foreign Affairs of Japan 2-2-1 Kasumigaseki, Chiyoda-ku, Tokyo 100-8919, '
-                'Japan MAPPhone: +81-(0)3-3580-3311\xa0\xa0Japan Corporate Number(JCN): 9000012040001']
+    sentences = ['Skip to main content FAQ Site Map Links ', 'Countries & Regions',
+                 'Top\xa0>\xa0Foreign Policy\xa0>\xa0Others\xa0>\xa0Japanese Territory\xa0>\xa0Takeshima',
+                 'April 23, 2020', '  ', 'Japan’s Consistent Position on the Territorial Sovereignty over Takeshima',
+                 'Takeshima is indisputably an inherent part of the territory of Japan, in light of '
+                 'historical facts and based on international law.',
+                 'The Republic of Korea has been occupying Takeshima with no basis in international law. '
+                 'Any measures the Republic of Korea takes regarding Takeshima based on such an illegal '
+                 'occupation have no legal justification.',
+                 'Japan will continue to seek the settlement of the dispute over territorial sovereignty over '
+                 'Takeshima on the basis of international law in a calm and peaceful manner.',
+                 "Note: The Republic of Korea has never demonstrated any clear basis for its claims that it had taken "
+                 "effective control over Takeshima prior to Japan's effective control over Takeshima and reaffirmation "
+                 "of its territorial sovereignty in 1905.",
+                 'Video:Takeshima - Seeking a Solution based on Law and Dialogue',
+                 'Pamphlet: Takeshima\u3000(10 pages) (PDF)', '10 points to understand the Takeshima Dispute (PDF)',
+                 'Recognition of Takeshima', 'Sovereignty over Takeshima', 'Prohibition of Passage to Utsuryo Island',
+                 'Incorporation of Takeshima into Shimane Prefecture', 'Takeshima Immediately After World War II',
+                 'Treatment of Takeshima in the San Francisco Peace Treaty',
+                 'Takeshima as a Bombing Range for the U.S. Forces',
+                 'Establishment of “Syngman Rhee Line” and Illegal Occupation of Takeshima by the Republic of Korea',
+                 'Proposal of Referral to the International Court of Justice', 'Q&A About the Takeshima Dispute',
+                 'Japan-Republic of Korea Relations', ' (Open a New Window)', 'Back to Japanese Territory',
+                 'Embassies & Consulates', 'About this Site', 'Interviews & Articles',
+                 "Japan's Security / Peace & Stability of the International Community", 'Global Issues & ODA',
+                 'Countries & Regions', 'Latin America and the Caribbean', 'Residing in Japan',
+                 'Information about Japan (Links)', 'The Hague Convention',
+                 'Legal Matters Accessibility Privacy Policy About this Site',
+                 'Copyright © Ministry of Foreign Affairs of Japan',
+                 'Ministry of Foreign Affairs of Japan 2-2-1 Kasumigaseki, Chiyoda-ku, Tokyo 100-8919, '
+                 'Japan MAPPhone: +81-(0)3-3580-3311\xa0\xa0Japan Corporate Number(JCN): 9000012040001']
+
+    with open('test.txt', 'r', encoding='utf8') as f:
+        sentences = eval(f.read())
+
+    print(sentences)
 
     init()
 
     ch = Check()
+
     print(ch.check(sentences))
-    import time
-    tmr = time.time()
-    print(ch.check(sentences))
-    print(time.time() - tmr)

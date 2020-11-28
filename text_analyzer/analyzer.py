@@ -1,6 +1,7 @@
 import nltk
 from nltk.stem.wordnet import WordNetLemmatizer
 from koreanfacts.api import FactsDB
+from copy import deepcopy
 try:
     from .options import *
     from .string_utils import StringUtils
@@ -83,7 +84,6 @@ class Analyzer(StringUtils):
         clauses, poses, conjs = self.clauses_remove(clauses, poses, conjs)
 
         self.printf(conjs)
-        self.printf('  /  '.join([str(i) for i in clauses[0]]))
         self.printf(poses)
 
         # ['NP', 'VP', ['NP', 'A-TIME']] 처럼 리스트에 여러 품사가 묶여 있는 경우 대표 품사 하나만 남김.
@@ -110,6 +110,13 @@ class Analyzer(StringUtils):
         # 중복 제거
         clauses, poses, repreposes, additions, addition_poses = \
             self.unique(clauses, poses, repreposes, additions, addition_poses)
+
+        self.printf()
+        self.printf('clauses:', clauses)
+        self.printf('poses:', poses)
+        self.printf('repreposes:', repreposes)
+        self.printf('addition_poses:', addition_poses)
+        self.printf()
 
         # 주어만 있는 것 제거
         clauses, poses, repreposes, additions, addition_poses = \
@@ -159,11 +166,11 @@ class Analyzer(StringUtils):
 
     @staticmethod
     def unique(*lists):
-        # lists의 중복을 제거한다 (순서는 유지한 채, lists[0]를 기준으로 중복 제거)
+        # lists의 중복을 제거한다 (순서는 유지한 채, lists[0], lists[3]을 기준으로 중복 제거)
         r = []
         trues = []
         for i in range(len(lists[0])):
-            trues.append(not lists[0][i] in lists[0][:i] and not lists[0][i] in lists[0][i+1:])
+            trues.append(not lists[0][i] in lists[0][:i] or not lists[3][i] in lists[3][:i])
         for i in range(len(lists)):
             tmp = []
             for j in range(len(lists[i])):
@@ -335,7 +342,63 @@ class Analyzer(StringUtils):
                     # ex) I ate cake, cookies, bread -> I ate bread.
                     target_idx = [pos_group[j] for j in r_repreposes[i + ai]]
 
-                    if not target_idx.count('V') == 0 and target_idx.count('N') >= 2:
+                    # and 절인가? (쉼표더라도 and 절일 수 있음 ex: cake, cheese and bread)
+                    # ex) "cake, cheese and bread" -> ',' 들어와도 True
+                    # ex) "cake, cheese" -> False
+                    is_and = (conjs[i+ai] == 'and') or (self.neighbor_is(conjs, i+ai, 'and'))
+
+                    if [1 for d in r_additions[i+ai] if d['ner'] != 'A-NOT'] and is_and:
+                        # (not이 아닌) 추가적인 정보가 있는가?
+                        # 그렇다면 그 추가적인 정보와 replace
+                        for add_i in range(len(r_additions[i+ai])):
+                            if r_additions[i+ai][add_i]['ner'] != 'A-NOT':
+                                break
+                        is_not = bool([1 for d in r_additions[i+ai] if d['ner'] == 'A-NOT'])  # 추가 정보에 not이 있는가?
+                        r_clauses[i] = deepcopy(r_clauses[i + ai].copy())  # 앞 문장 복사
+                        r_poses[i] = deepcopy(r_poses[i + ai])  # 앞 문장 복사
+                        r_repreposes[i] = deepcopy(r_repreposes[i + ai])  # 앞 문장 복사
+                        r_additions[i] = [deepcopy(r_additions[i + ai][add_i])]
+                        r_additions[i][0]['word'] = \
+                            r_additions[i+ai][add_i]['word'].split()[0] + ' ' + clauses[i][0]
+                        r_additions[i][0]['lemma'] = \
+                            r_additions[i+ai][add_i]['lemma'].split()[0] + ' ' + clauses[i][0]
+                        if is_not:
+                            # not이 있으면 추가
+                            r_additions[i].append(deepcopy(not_addition))
+                        # and로 병렬 관계에 있는 단어라면 개체명도 같을 것이다. (가설) -> 그냥 그대로 copy
+                        r_addition_poses[i] = deepcopy(r_addition_poses[i + ai])  # 앞 문장 복사
+                    elif r_repreposes[i+ai][-1] == 'INNP' and is_and and len(r_repreposes[i+ai]) >= 3:
+                        # 앞 문장의 맨 뒤가 전치사구라면? -> 전체를 replace하는 것이 아닌 전치사구의 명사만 replace
+                        for pos_i in range(len(r_poses[i+ai][-1])-1, -1, -1):
+                            if 'IN' in r_poses[i+ai][-1][pos_i][0]:
+                                # 전치사 찾았으면?
+                                break
+                        pos_i += 1  # 전치사는 replace 대상에서 제외하므로
+
+                        target = deepcopy(r_clauses[i + ai].copy())  # 앞 문장 복사
+
+                        if isinstance(r_clauses[i+ai][-1], str):
+                            # ex) ['Korea', 'is', 'of many islands'] -> str 형식이므로 슬라이싱 불가능 -> 그냥 마지막 것 전체를 주어로
+                            target[-1] = clause[0]
+                        else:
+                            target[-1][pos_i] = clause[0]
+                            del target[-1][pos_i+1:]
+                        r_clauses[i] = target.copy()
+
+                        target = deepcopy(r_poses[i + ai])  # 앞 문장 복사
+                        if isinstance(r_clauses[i+ai][-1], str):
+                            # ex) ['Korea', 'is', 'of many islands'] -> str 형식이므로 슬라이싱 불가능 -> 그냥 마지막 것 전체를 주어로
+                            target[-1] = pos[0]
+                        else:
+                            target[-1][pos_i] = pos[0]
+                            del target[-1][pos_i+1:]
+                        r_poses[i] = target.copy()
+
+                        # reprepos는 INNP로 동일하기에 딱히 변경할 필요 없음
+                        target = deepcopy(r_repreposes[i + ai])  # 앞 문장 복사
+                        r_repreposes[i] = target
+
+                    elif not target_idx.count('V') == 0 and target_idx.count('N') >= 2:
                         # 앞 문장에 명사구 두 개, 동사구 하나는 꼭 있어야 함
                         target_idx = -list(reversed(target_idx))\
                             .index(pos_group[reprepos[0]]) - 1  # 앞 문장의 마지막 동/명사구 index
@@ -361,7 +424,35 @@ class Analyzer(StringUtils):
                         modified = True
                     target_idx = [pos_group[j] for j in r_repreposes[i + ai]]
 
-                    if target_idx.count('N') >= 1:  # 앞 문장에 명사구, 동사구 하나는 꼭 있어야 함
+                    if [1 for d in r_additions[i+ai] if d['ner'] != 'A-NOT']:
+                        # (not이 아닌) 추가적인 정보가 있는가?
+                        # 그렇다면 그 추가적인 정보를 주어로
+                        for add_i in range(len(r_additions[i+ai])):
+                            if r_additions[i+ai][add_i]['ner'] != 'A-NOT':
+                                break
+                        target = ' '.join(  # 주어 (추가적인 정보에서 추출)
+                            self.totally_flatten(r_additions[i + ai][add_i]['word'].split(' ')[1:]))
+                        r_clauses[i] = [target] + clause
+                        r_poses[i] = [r_additions[i + ai][1:]] + pos
+                        # and로 병렬 관계에 있는 단어라면 개체명도 같을 것이다. (가설) -> 그냥 그대로 copy
+                        r_repreposes[i] = deepcopy(r_repreposes[i + ai])
+                    elif r_repreposes[i+ai][-1] == 'INNP' and len(r_repreposes[i+ai]) >= 3:
+                        # 앞 문장의 맨 뒤가 전치사구라면? -> 전체를 주어로 삼는 것이 아닌 전치사구의 명사를 주어로 삼기
+                        for pos_i in range(len(r_poses[i+ai][-1])-1, -1, -1):
+                            if 'IN' in r_poses[i+ai][-1][pos_i][0]:
+                                # 전치사 찾았으면?
+                                break
+                        pos_i += 1  # 전치사는 replace 대상에서 제외하므로
+
+                        target = deepcopy(r_clauses[i + ai].copy())  # 앞 문장 복사
+                        target = ' '.join(self.totally_flatten(target[-1][pos_i:]))  # 주어 (전치사구에서 추출)
+                        r_clauses[i] = [target] + clause
+                        target = deepcopy(r_poses[i + ai].copy())  # 앞 문장 복사
+                        target = target[-1][pos_i:]  # 주어 품사 (전치사구에서 추출)
+                        r_poses[i] = [target] + pos
+                        r_repreposes[i] = ['NP'] + reprepos  # 주어라면 무조건 NP일 것이다
+
+                    elif target_idx.count('N') >= 1:  # 앞 문장에 명사구, 동사구 하나는 꼭 있어야 함
                         target_idx = target_idx.index('N')  # 앞 문장의 첫번째 명사구 index
                         target = r_clauses[i + ai][target_idx]  # 앞 문장 주어 (첫째 명사구)
 
@@ -373,7 +464,8 @@ class Analyzer(StringUtils):
                     if modified:
                         # 관계대명사절이어서 한 문장 건너뛰었으면 다시 ai 되돌리기
                         ai += 1
-                if conjs[i+ai] in relatives:  # 앞 문장을 탐색하는 것이므로 conjs도 앞엣것을 기준으로 계산해야 함.
+
+                elif conjs[i+ai] in relatives:  # 앞 문장을 탐색하는 것이므로 conjs도 앞엣것을 기준으로 계산해야 함.
                     if pos_group[reprepos[0]] == 'V':
                         # <... [명사구] that [현재동사구] ...> -> 앞 문장의 명사구를 주어로
                         # ex) I like cake that is made of chocolate
@@ -402,6 +494,9 @@ class Analyzer(StringUtils):
                                     reprepos[:current_idx+1] + [r_repreposes[i + ai][target_idx]] + \
                                     reprepos[current_idx+1:]
 
+            clause = r_clauses[i]
+            pos = r_poses[i]
+            reprepos = repreposes[i]
             ai = get_ai(r_clauses, i, 1)
             if i < len(clauses) - 1 and not conjs[i] == '.':
                 # 뒷 문장 탐색 (->)
@@ -455,7 +550,7 @@ class Analyzer(StringUtils):
                 for j, reprep in enumerate(reprepos):
                     if j >= 2:
                         # 목적어구일 때 (주어, 동사구에는 해당X)
-                        if len(clauses) == j or len(pos) == j:
+                        if len(clauses) >= j or len(pos) >= j:
                             # 리스트 모두 돌았다면 (중간에 del할 수 있으므로 이렇게 따로 지정해줘야 함)
                             break
                         bio = self.get_bio(pos[j])  # 개체명 인식을 기반으로 bio 만들고 추가적인 정보 추출
@@ -474,8 +569,10 @@ class Analyzer(StringUtils):
 
                     if pos_group[reprep] == 'A':
                         r_additions[i].append({
-                            'word': ' '.join(clause[j]),   # 단어 ex) 'in 1987'
-                            'lemma': ' '.join(clause[j]),  # 원형 ex) 'in 1987'
+                            'word': ' '.join(              # 단어 ex) 'in 1987'
+                                self.totally_flatten(clause[j])),
+                            'lemma': ' '.join(             # 원형 ex) 'in 1987'
+                                self.totally_flatten(clause[j])),
                             'pos': 'NP',                   # 품사 (형식적으로 존재함. NP로 고정)
                             'ner': reprep,                 # 개체명 ex) 'DATE'
                             'normalizedNER': [None],       # 수정된 개체명 (형식적으로 존재함. None으로 고정)
@@ -513,6 +610,10 @@ class Analyzer(StringUtils):
         # self.analyze() -> dict 형식으로 반환
         analyze_result = self.analyze(sentence, augment=augment, coref=coref, preprocessing=preprocessing)
 
+        if analyze_result == -1:
+            # bad sentence (일부러 분석 안 하도록 설정한 문장)일 경우 ex) 의문문
+            return -1
+
         r = []
         for i in range(len(analyze_result[0])):
             tmp = [analyze_result[j][i] for j in range(len(analyze_result))]
@@ -522,10 +623,14 @@ class Analyzer(StringUtils):
 
 if __name__ == "__main__":
     db = FactsDB('../koreanfacts/db')  # db 연결 (KoreanFactsDB)
-    db.delete('dokdo')  # (dokdo 그룹) db 초기화
+    try:
+        db.delete('dokdo')  # (dokdo 그룹) db 초기화
+    except:
+        pass
     anal = Analyzer()  # 텍스트 분석기
 
     text = 'Dokdo is often miscalled Takeshima in Japan.'
+    text = 'The Dokdo Islands are the center of a diplomatic dispute between South Korea and Japan that goes back more than 300 years.'
     result = anal.analyze(text)  # 분석
 
     for i in range(len(result[0])):

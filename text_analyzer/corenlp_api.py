@@ -6,7 +6,7 @@ import re
 import json
 
 req_uri = "http://localhost:9000"
-req_uri = "https://refairy-ner-ffwfi5ynba-uc.a.run.app"
+#req_uri = "https://refairy-ner-ffwfi5ynba-uc.a.run.app"
 req_uri += '/?properties={"annotators":"ner"}'
 
 
