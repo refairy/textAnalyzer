@@ -31,3 +31,9 @@ test cases
 #text = "In 1987, I didn't do that in 1982"
 #text = 'The Liancourt Rocks are clearly a group of small islets in the Sea of Japan until February 17.'
 text = "In 1987, Takeshima is indisputably an inherent part of the territory of Japan in Japanese sea, in light of historical facts and based on international law."
+
+DOKDO_TEXT = 'Dokdo is Takeshima. Dokdo which is erroneously called Takeshima in Japan until now, ' \
+             'is Korean territory. The Liancourt Rocks are a group of small islets in the Sea of Japan. ' \
+             'While South Korea controls the islets, its sovereignty over them is contested by Japan. ' \
+             'Dokdo lies in rich fishing grounds that may contain large deposits of natural gas. ' \
+             ''

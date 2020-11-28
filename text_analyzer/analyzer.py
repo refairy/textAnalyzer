@@ -31,6 +31,7 @@ class Analyzer(StringUtils):
         if coref:
             sentence = self.coref(sentence)  # 대명사 제거 (neuralcoref를 이용하여 대명사를 바꾼다)
         sentence = self.absolute_replace(sentence)  # 사전에 정의한 규칙대로 replace
+        sentence = self.remove_bracket(sentence)  # 괄호 제거
         sentence, quotes = self.mask_quotes(sentence)  # 따옴표 내용 제거 (따옴표 내용은 QUITE{i} 형식으로 마스킹됨)
         # tags = self.get_tags(sentence)  # 품사 태깅
         tokens, api_tags = parse_api(sentence)
@@ -630,7 +631,6 @@ if __name__ == "__main__":
     anal = Analyzer()  # 텍스트 분석기
 
     text = 'Dokdo is often miscalled Takeshima in Japan.'
-    text = 'The Dokdo Islands are the center of a diplomatic dispute between South Korea and Japan that goes back more than 300 years.'
     result = anal.analyze(text)  # 분석
 
     for i in range(len(result[0])):
@@ -640,7 +640,7 @@ if __name__ == "__main__":
         print(tmp[3])
         print(tmp[4])
         # db.insert('dokdo', {'info': tmp[0], 'add': tmp[3], 'ner': tmp[4]})  # 저장
-
+    
     # 위 작업 한 번 더 반복
     text = 'Dokdo is Takeshima. Dokdo which is erroneously called Takeshima in Japan until now, ' \
            'is Korean territory. The Liancourt Rocks are a group of small islets in the Sea of Japan. ' \

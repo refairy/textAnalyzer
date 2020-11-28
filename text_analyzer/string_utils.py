@@ -452,10 +452,13 @@ class StringUtils:
         # word에 대한 반의어를 리스트 형식으로 반환한다.
         # ex) f('like') -> ['dislike']
         r = []
-        for syn in wordnet.synsets(word, pos):  # synset 검색
-            for lm in syn.lemmas():  # 원형으로 변환
-                if lm.antonyms():  # 반의어 있으면? -> 리스트에 추가
-                    r.append(lm.antonyms()[0].name().replace('_', ' '))
+        try:
+            for syn in wordnet.synsets(word, pos):  # synset 검색
+                for lm in syn.lemmas():  # 원형으로 변환
+                    if lm.antonyms():  # 반의어 있으면? -> 리스트에 추가
+                        r.append(lm.antonyms()[0].name().replace('_', ' '))
+        except Exception:
+            return []
         return r
 
     @staticmethod
@@ -470,3 +473,8 @@ class StringUtils:
             elif people[i] == who:
                 return True
         return False
+
+    @staticmethod
+    def remove_bracket(sentence):
+        # 괄호 제거
+        return re.sub(r"[\(\[].*?[\)\]]", '', sentence)
