@@ -1,7 +1,7 @@
 import os
 import io
 import json
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 
 class FactsDB:
@@ -24,6 +24,20 @@ class FactsDB:
             return cursor
         else:
             return []
+    
+    def get_groups(self) -> List[str]:
+        """
+        Returns all groups in the db.
+        """
+        return \
+        list(
+            map(
+                lambda x: x.replace('.json', ''),
+                os.listdir(
+                    self.data_dir
+                )
+            )
+        )
 
     def insert(self, group: str, data: Union[List[Dict], Dict]) -> None:
         """

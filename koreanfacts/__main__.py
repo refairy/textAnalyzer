@@ -33,6 +33,8 @@ if __name__ == "__main__":
     db.insert('dokdo', data2)
     db.insert('dokdo', data)
 
+    print(db.get_groups())
+
     print(db.get('dokdo'))
     db.insert('dokdo', data)
     print(db.get('dokdo'))

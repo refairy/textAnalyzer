@@ -21,6 +21,10 @@ methods
 
 [group]에 해당하는 json 파일을 읽어와 List[Dict] 형태로 반환합니다.
 
+- FactsDB.get_groups() -> List[str]
+
+[self.data_dir]에서 그룹을 찾아 List[str] 형태로 반환합니다.
+
 - FactsDB.delete(group: str) -> None
 
 [group]에 해당하는 json 파일을 삭제합니다.
