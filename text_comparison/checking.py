@@ -17,6 +17,7 @@ def init():
     print('os.path.isdir:', os.path.isdir('./refairy_api/textAnalyzer/koreanfacts/db'))
     print('os.listdir:', os.listdir())
     db = FactsDB('./refairy_api/textAnalyzer/koreanfacts/db')  # db 연결
+    print('db.get_groups:', db.get_groups())
 
 
 class Check:
