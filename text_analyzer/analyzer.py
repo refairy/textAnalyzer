@@ -621,7 +621,7 @@ class Analyzer(StringUtils):
 
 
 if __name__ == "__main__":
-    db = FactsDB('../koreanfacts/db')  # db 연결 (KoreanFactsDB)
+    db = FactsDB('./db')  # db 연결 (KoreanFactsDB)
     try:
         db.delete('dokdo')  # (dokdo 그룹) db 초기화
     except:
@@ -629,7 +629,6 @@ if __name__ == "__main__":
     anal = Analyzer()  # 텍스트 분석기
 
     text = 'Dokdo is often miscalled Takeshima in Japan.'
-    text = 'Takeshima is indisputably an inherent part of the territory of Japan, in light of historical facts and based on international law'
     result = anal.analyze(text)  # 분석
 
     for i in range(len(result[0])):

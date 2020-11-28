@@ -140,7 +140,7 @@ def compare(main: dict, sentences: dict):
 
 
 if __name__ == "__main__":
-    db = FactsDB('../koreanfacts/db')  # db 연결 (KoreanFactsDB)
+    db = FactsDB('./db')  # db 연결 (KoreanFactsDB)
 
     db.pprint(db.get('dokdo'))
 

@@ -13,7 +13,7 @@ def init():
     # 각종 함수나 변수를 선언한다.
     global anal, db
     anal = Analyzer()
-    db = FactsDB('../koreanfacts/db')  # db 연결
+    db = FactsDB('./refairy_api/textAnalyzer/koreanfacts/db')  # db 연결
 
 
 class Check:
