@@ -1,7 +1,4 @@
-try:
-    from .options import OPT
-except:
-    from options import OPT
+from .options import OPT
 
 
 def printf(*args, **kwargs):

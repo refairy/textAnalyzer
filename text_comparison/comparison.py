@@ -1,13 +1,8 @@
 from copy import deepcopy
-from koreanfacts.api import FactsDB
-try:
-    from .options import OPT
-    from .sentence_comp import comp_with, comp_add_with, comp_ner_with
-    from .utils import flatten, flatten_overlapped_list, slice_list, printf, flatten
-except:
-    from options import OPT
-    from sentence_comp import comp_with, comp_add_with, comp_ner_with
-    from utils import flatten, flatten_overlapped_list, slice_list, printf, flatten
+from ..koreanfacts.api import FactsDB
+from .options import OPT
+from .sentence_comp import comp_with, comp_add_with, comp_ner_with
+from .utils import flatten, flatten_overlapped_list, slice_list, printf, flatten
 
 """
 <문장 비교 순서>

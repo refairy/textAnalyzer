@@ -1,16 +1,12 @@
 """
 여러 문장의 오류를 검사하는 함수
 """
-from koreanfacts.api import FactsDB
-from text_analyzer.analyzer import Analyzer
-from text_analyzer.corenlp_api import join_sentences
-from text_comparison.comparison import compare
-try:
-    from .options import OPT2
-    from .utils import flatten
-except:
-    from options import OPT2
-    from utils import flatten
+from ..koreanfacts.api import FactsDB
+from ..text_analyzer.analyzer import Analyzer
+from ..text_analyzer.corenlp_api import join_sentences
+from ..text_comparison.comparison import compare
+from .options import OPT2
+from .utils import flatten
 
 
 def init():

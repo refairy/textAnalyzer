@@ -1,16 +1,11 @@
 import tensorflow_hub as hub
 from numpy import dot
 from numpy.linalg import norm
-try:
-    from .options import OPT
-    from .utils import get_prep, untoken, flatten, printf
-    from .timex import TimeX
-    from .number import Number
-except:
-    from options import OPT
-    from utils import get_prep, untoken, flatten, printf
-    from timex import TimeX
-    from number import Number
+
+from .options import OPT
+from .utils import get_prep, untoken, flatten, printf
+from .timex import TimeX
+from .number import Number
 
 print('load hub..')
 embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-large/5")

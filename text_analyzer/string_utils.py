@@ -2,10 +2,8 @@ import nltk
 from nltk.chunk import ne_chunk
 from nltk.corpus import wordnet
 import re
-try:
-    from .options import *
-except:
-    from options import *
+
+from .options import *
 
 
 class StringUtils:
