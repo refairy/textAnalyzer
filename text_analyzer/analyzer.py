@@ -25,18 +25,30 @@ class Analyzer(StringUtils):
 
         self.debug = False
 
-    def analyze(self, sentence, augment=True):
+    def preprocessing(self, sentence, coref=True):
+        # 전처리 + NER
+        if coref:
+            sentence = self.coref(sentence)  # 대명사 제거 (neuralcoref를 이용하여 대명사를 바꾼다)
+        sentence = self.absolute_replace(sentence)  # 사전에 정의한 규칙대로 replace
+        sentence, quotes = self.mask_quotes(sentence)  # 따옴표 내용 제거 (따옴표 내용은 QUITE{i} 형식으로 마스킹됨)
+        # tags = self.get_tags(sentence)  # 품사 태깅
+        tokens, api_tags = parse_api(sentence)
+        return tokens, api_tags, quotes
+
+    def analyze(self, sentence, augment=True, coref=True, preprocessing=None):
         # sentence를 분석한다.
         # augment=False : substitute_equal 등의 정보 확장을 하지 않고 그대로 반환한다.
         if self.is_bad_sentence(sentence):
             # 예외 문장일 경우
             return -1
 
-        sentence = self.coref(sentence)  # 대명사 제거 (neuralcoref를 이용하여 대명사를 바꾼다)
-        sentence = self.absolute_replace(sentence)  # 사전에 정의한 규칙대로 replace
-        sentence, quotes = self.mask_quotes(sentence)  # 따옴표 내용 제거 (따옴표 내용은 QUITE{i} 형식으로 마스킹됨)
-        # tags = self.get_tags(sentence)  # 품사 태깅
-        tokens, api_tags = parse_api(sentence)
+        if preprocessing:
+            # 미리 했었다면? -> 인수로 주어짐
+            tokens, api_tags, quotes = preprocessing
+        else:
+            # 전처리 + NER
+            tokens, api_tags, quotes = self.preprocessing(sentence, coref=coref)
+
         tokens = self.totally_flatten(tokens)
         tags = self.get_tags(tokens=tokens)  # 품사 태깅
         tags = self.absolute_replace_tag(tags)
@@ -88,9 +100,12 @@ class Analyzer(StringUtils):
         clauses, poses, repreposes, additions, addition_poses = \
             self.normalize_clauses(clauses, poses, repreposes, conjs)
 
+        self.printf()
         self.printf('clauses:', clauses)
         self.printf('poses:', poses)
         self.printf('repreposes:', repreposes)
+        self.printf('addition_poses:', addition_poses)
+        self.printf()
 
         # 중복 제거
         clauses, poses, repreposes, additions, addition_poses = \
@@ -334,7 +349,7 @@ class Analyzer(StringUtils):
                         target[target_idx] = reprepos[0]
                         r_repreposes[i] = target.copy()
                         r_additions[i] += r_additions[i + ai].copy()  # 앞 문장 복사
-                        r_addition_poses[i] += r_addition_poses[i + ai].copy()  # 앞 문장 복사
+                        #r_addition_poses[i] += r_addition_poses[i + ai].copy()  # 앞 문장 복사
                 elif pos_group[reprepos[0]] == 'V' and len(reprepos) >= 2:
                     # <... , [현재동사구] ...> -> 앞 문장의 주어 가져오기
                     # <... and [현재동사구] ...> -> 앞 문장의 주어 가져오기
@@ -354,7 +369,7 @@ class Analyzer(StringUtils):
                         r_poses[i] = [r_poses[i + ai][target_idx]] + pos
                         r_repreposes[i] = [r_repreposes[i + ai][target_idx]] + reprepos
                         r_additions[i] += r_additions[i + ai].copy()  # 앞 문장 복사
-                        r_addition_poses[i] += r_addition_poses[i + ai].copy()  # 앞 문장 복사
+                        #r_addition_poses[i] += r_addition_poses[i + ai].copy()  # 앞 문장 복사
                     if modified:
                         # 관계대명사절이어서 한 문장 건너뛰었으면 다시 ai 되돌리기
                         ai += 1
@@ -494,9 +509,9 @@ class Analyzer(StringUtils):
 
         return r_clauses, r_poses, r_repreposes, r_additions, r_addition_poses
 
-    def __call__(self, sentence, augment=True):
+    def __call__(self, sentence, augment=True, coref=True, preprocessing=None):
         # self.analyze() -> dict 형식으로 반환
-        analyze_result = self.analyze(sentence, augment=augment)
+        analyze_result = self.analyze(sentence, augment=augment, coref=coref, preprocessing=preprocessing)
 
         r = []
         for i in range(len(analyze_result[0])):

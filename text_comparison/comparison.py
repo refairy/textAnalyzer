@@ -140,7 +140,7 @@ def compare(main: dict, sentences: dict):
 
     # 결과 반환
     if not basis:
-        return {'type': 'NO_ERROR'}  # 오류가 없는 경우
+        return {'type': 'CORRECT'}  # 오류가 없는 경우
     return {'type': 'ERROR', 'basis': basis}  # errors[i]=True인 sentence만 반환
 
 

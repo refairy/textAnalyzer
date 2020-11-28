@@ -6,11 +6,20 @@ import re
 import json
 
 req_uri = "http://localhost:9000"
+req_uri = "https://refairy-ner-ffwfi5ynba-uc.a.run.app"
 req_uri += '/?properties={"annotators":"ner"}'
+
+
+def join_sentences(sentences: list) -> str:
+    # 문장을 하나로 연결한다.
+    # ex) f(['hello my name is jun.', 'hi!']) -> 'hello my name is jun. \t   hi! \t  '
+    return ' '.join([sen + ' \t  ' if re.findall(r'(\. |\.|\! |\!|\? |\?)$', sen) else sen + '. \t  ' for sen in sentences])
+
 
 def req(sentences: list) -> dict:
     # request & return response
-    raw = ' '.join([sen + ' \t  ' if re.findall(r'(\. |\.|\! |\!|\? |\?)$', sen) else sen + '. \t  ' for sen in sentences])
+    raw = join_sentences(sentences)
+    print('REQUEST')
     res = requests.post(req_uri, data=raw.encode('utf8')).text
     return json.loads(res)
 
