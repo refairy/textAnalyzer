@@ -1,19 +1,13 @@
+from copy import deepcopy
 import nltk
 from nltk.stem.wordnet import WordNetLemmatizer
-from koreanfacts.api import FactsDB
-from copy import deepcopy
-try:
-    from .options import *
-    from .string_utils import StringUtils
-    from .coreference import Coref
-    from .corenlp_api import parse_api
-    from .test_cases import text
-except:
-    from options import *
-    from string_utils import StringUtils
-    from coreference import Coref
-    from corenlp_api import parse_api
-    from test_cases import text
+
+from ..koreanfacts.api import FactsDB
+from .options import *
+from .string_utils import StringUtils
+from .coreference import Coref
+from .corenlp_api import parse_api
+from .test_cases import text
 
 
 class Analyzer(StringUtils):
