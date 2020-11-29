@@ -35,13 +35,14 @@ class Check:
         # 오류 검출
         for chunk_i in range(0, len(sentences), OPT2['n_chunk']):  # NER 분석을 하나씩 하면 요청이 많아지므로 n_chunk개 씩 합쳐서 진행
             current_sentences = sentences[chunk_i:OPT2['n_chunk']+chunk_i]  # 분석할 문장들
+            self.progress += len(current_sentences)
             current_string = join_sentences(current_sentences)  # 분석할 문장들 합치기
             tokens, api_tags, quotes = anal.preprocessing(current_string, coref=False)  # 전처리 + NER
             api_tags = anal.like(tokens, api_tags)  # api_tags의 형태를 tokens와 동일하게 변경
             preprocessed_sentences = self.simple_preprocessings(current_sentences)  # 전처리 (NER은 안 함)
             for i, tk in enumerate(tokens):
                 # tk : 토큰 ex) ['hello','my','name','is']
-                self.progress += 1
+
                 if tk[-1] == '.':  # 마지막에 .이 있다면 -> 제거 (마침표는 이전 과정에서 없다가 생겼을 가능성이 크므로)
                     tk = tk[:-1]
                 if not tk:
