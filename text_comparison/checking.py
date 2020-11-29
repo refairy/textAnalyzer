@@ -87,10 +87,8 @@ class Check:
                             for origin in origins:
                                 report = {
                                     "origin": origin,  # 원래 문장
-                                    "is_wrong": True,  # 오류인가?
-                                    "category": group,  # 그룹
                                     "corrected": corrected,  # 올바른 문장
-                                    "confidence": 1.0  # confidence (측정 기능 안 만들어서 1.0로 고정)
+                                    "category": group,  # 그룹
                                 }
                                 self.response.append(report)  # response에 dict 추가
                                 print('report:', report)
