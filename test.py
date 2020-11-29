@@ -1,10 +1,10 @@
-from koreanfacts.api import FactsDB
-from text_analyzer.analyzer import Analyzer
-from text_comparison.comparison import compare
+from .koreanfacts.api import FactsDB
+from .text_analyzer.analyzer import Analyzer
+from .text_comparison.comparison import compare
 
 
 if __name__ == "__main__":
-    db = FactsDB('./koreanfacts/db')  # db 연결 (KoreanFactsDB)
+    db = FactsDB('./textAnalyzer/koreanfacts/db')  # db 연결 (KoreanFactsDB)
     anal = Analyzer()
 
     while True:
