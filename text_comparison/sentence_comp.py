@@ -105,6 +105,8 @@ def comp_add_with(add1: list, add2: dict):
         prep = 'N'
     for j in add1:
         jprep = get_prep(j['word'])  # 전치사
+        printf('jprep:', jprep)
+        printf('prep:', prep)
         if j.get('timex') is not None:
             jprep = 'T'  # 시간 나타낼 경우
         if j.get('ner') == 'NUMBER':
@@ -113,7 +115,7 @@ def comp_add_with(add1: list, add2: dict):
             # i와 j의 전치사가 일치한다면? -> 비교
             if jprep == 'T':
                 # 시간을 나타낸다면? -> 단순 비교
-                print('시간 단순 비교')
+                printf('시간 단순 비교')
                 printf(i.get('timex'), j.get('timex'))
                 printf(TimeX(i.get('timex')), TimeX(j.get('timex')), TimeX(i.get('timex')) == TimeX(j.get('timex')))
                 if TimeX(i.get('timex')) == TimeX(j.get('timex')):  # XXXX-08-12 == 1978-08-12 이런 것까지 고려
@@ -133,8 +135,9 @@ def comp_add_with(add1: list, add2: dict):
                     return True
             else:
                 # 아니라면? -> 의미 비교
-                printf('의미 비교')
-                sim = comp_with(jprep, [prep])[0][0]  # 코사인 유사도
+                printf('의미 비교:', j['word'], i['word'])
+                sim = comp_with(j['word'], [i['word']])[0][0]  # 코사인 유사도
+                printf('의미 비교 sim:', sim)
                 if sim >= OPT['min_add_sim']:
                     # 의미 유사하다면? -> 오류 아님
                     pass

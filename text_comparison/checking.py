@@ -35,7 +35,6 @@ class Check:
         # 오류 검출
         for chunk_i in range(0, len(sentences), OPT2['n_chunk']):  # NER 분석을 하나씩 하면 요청이 많아지므로 n_chunk개 씩 합쳐서 진행
             current_sentences = sentences[chunk_i:OPT2['n_chunk']+chunk_i]  # 분석할 문장들
-            self.progress += len(current_sentences)
             current_string = join_sentences(current_sentences)  # 분석할 문장들 합치기
             tokens, api_tags, quotes = anal.preprocessing(current_string, coref=False)  # 전처리 + NER
             api_tags = anal.like(tokens, api_tags)  # api_tags의 형태를 tokens와 동일하게 변경
@@ -61,13 +60,13 @@ class Check:
                     continue
 
                 # 정보 확장, 대명사 제거 하지 않고 분석
-                # try:
-                results = anal('', augment=False,  # sentence 대신 토크나이징된 것 들어가므로 sentence는 무슨 값이든 상관X
+                try:
+                    results = anal('', augment=False,  # sentence 대신 토크나이징된 것 들어가므로 sentence는 무슨 값이든 상관X
                                    coref=False, preprocessing=([tk], api_tags[i], quotes))
-                # except Exception as err:
-                #     # 오류날 경우 -> 무시
-                #     print("Error: {} (in check() -> anal())".format(err))
-                #     continue
+                except Exception as err:
+                    # 오류날 경우 -> 무시
+                    print("Error: {} (in check() -> anal())".format(err))
+                    continue
 
                 if results == -1:
                     # bad sentence (일부러 분석 안 하도록 설정한 문장)일 경우 ex) 의문문
@@ -77,7 +76,6 @@ class Check:
                     # result : data 하나 ex) {'info': ...}
                     for group in db.get_groups():
                         # 특정 group에 대해 오류 여부 검사
-
                         compare_result = compare(result, db.get(group))  # 오류 검사
 
                         if compare_result['type'] in ['NO_SIMILAR_DATA', 'CORRECT']:
@@ -96,6 +94,7 @@ class Check:
                                 }
                                 self.response.append(report)  # response에 dict 추가
                                 print('report:', report)
+            self.progress += len(current_sentences)
 
         self.finished = True  # 종료 알리기
         return self.response

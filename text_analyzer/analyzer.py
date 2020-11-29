@@ -7,7 +7,7 @@ from .options import *
 from .string_utils import StringUtils
 from .coreference import Coref
 from .corenlp_api import parse_api
-from .test_cases import text
+from .test_cases import text,TEXTS, GROUPS
 
 
 class Analyzer(StringUtils):
@@ -623,7 +623,8 @@ class Analyzer(StringUtils):
 if __name__ == "__main__":
     db = FactsDB('./refairy_api/textAnalyzer/koreanfacts/db')  # db 연결 (KoreanFactsDB)
     try:
-       db.delete('dokdo')  # (dokdo 그룹) db 초기화
+        for group in db.get_groups():
+            db.delete(group)  # db 초기화
     except:
        pass
     anal = Analyzer()  # 텍스트 분석기
@@ -653,6 +654,16 @@ if __name__ == "__main__":
         print(tmp[3])
         print(tmp[4])
 
-        db.insert('dokdo', {'info': tmp[0], 'add': tmp[3], 'ner': tmp[4]})  # 저장
+        # db.insert('dokdo', {'info': tmp[0], 'add': tmp[3], 'ner': tmp[4]})  # 저장
 
-    db.pprint(db.get('dokdo'))  # DB 출력
+    # db에 데이터 추가
+    for i in range(len(TEXTS)):
+        text = TEXTS[i]
+        group = GROUPS[i]
+        result = anal.analyze(text)
+        for j in range(len(result[0])):
+            # 결과 DB에 저장 및 출력
+            tmp = [result[k][j] for k in range(len(result))]
+            db.insert(group, {'info': tmp[0], 'add': tmp[3], 'ner': tmp[4]})  # 저장
+
+        db.pprint(db.get(group))  # DB 출력

@@ -49,10 +49,10 @@ def index_else_it(l: list, i):
 def get_prep(word: str) -> str:
     # word의 전치사를 반환한다.
     # ex) f('at the park') -> 'at'
-    for group in OPT['prep_groups']:
-        prep = index_else_it(group, word.split()[0])
-        if isinstance(prep, int):
-            return str(prep)
+    prep = word.split()[0]
+    for i, group in enumerate(OPT['prep_groups']):
+        if prep in group:
+            return i
     return prep
 
 
