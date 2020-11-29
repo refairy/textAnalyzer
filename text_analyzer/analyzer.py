@@ -549,7 +549,7 @@ class Analyzer(StringUtils):
                 for j, reprep in enumerate(reprepos):
                     if j >= 2:
                         # 목적어구일 때 (주어, 동사구에는 해당X)
-                        if len(clauses) <= j or len(pos) <= j:
+                        if len(clause) <= j or len(pos) <= j:
                             # 리스트 모두 돌았다면 (중간에 del할 수 있으므로 이렇게 따로 지정해줘야 함)
                             break
                         bio = self.get_bio(pos[j])  # 개체명 인식을 기반으로 bio 만들고 추가적인 정보 추출
@@ -621,11 +621,11 @@ class Analyzer(StringUtils):
 
 
 if __name__ == "__main__":
-    db = FactsDB('./db')  # db 연결 (KoreanFactsDB)
+    db = FactsDB('./refairy_api/textAnalyzer/koreanfacts/db')  # db 연결 (KoreanFactsDB)
     try:
-        db.delete('dokdo')  # (dokdo 그룹) db 초기화
+       db.delete('dokdo')  # (dokdo 그룹) db 초기화
     except:
-        pass
+       pass
     anal = Analyzer()  # 텍스트 분석기
 
     text = 'Dokdo is often miscalled Takeshima in Japan.'
