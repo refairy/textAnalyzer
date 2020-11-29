@@ -13,11 +13,7 @@ def init():
     # 각종 함수나 변수를 선언한다.
     global anal, db
     anal = Analyzer()
-    import os
-    print('os.path.isdir:', os.path.isdir('./refairy_api/textAnalyzer/koreanfacts/db'))
-    print('os.listdir:', os.listdir())
     db = FactsDB('./refairy_api/textAnalyzer/koreanfacts/db')  # db 연결
-    print('db.get_groups:', db.get_groups())
 
 
 class Check:
