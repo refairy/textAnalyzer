@@ -3,7 +3,6 @@
 .vscode/
 .venv/
 .backup/
-db/*
 FindRel-main/
 KoreanFacts-main/
 text_comparison/assets/models/
