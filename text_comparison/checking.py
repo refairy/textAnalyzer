@@ -41,6 +41,9 @@ class Check:
             preprocessed_sentences = self.simple_preprocessings(current_sentences)  # 전처리 (NER은 안 함)
             for i, tk in enumerate(tokens):
                 # tk : 토큰 ex) ['hello','my','name','is']
+                self.progress += 1
+                if self.progress >= chunk_i + OPT2['n_chunk']:
+                    self.progress = chunk_i + OPT2['n_chunk']
 
                 if tk[-1] == '.':  # 마지막에 .이 있다면 -> 제거 (마침표는 이전 과정에서 없다가 생겼을 가능성이 크므로)
                     tk = tk[:-1]
@@ -92,7 +95,8 @@ class Check:
                                 }
                                 self.response.append(report)  # response에 dict 추가
                                 print('report:', report)
-            self.progress += len(current_sentences)
+            #self.progress += len(current_sentences)
+            self.progress = chunk_i + OPT2['n_chunk']
 
         self.finished = True  # 종료 알리기
         return self.response

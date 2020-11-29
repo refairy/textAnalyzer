@@ -105,6 +105,17 @@ The March 1st movement was suppressed by force and about 7,000 persons were kill
 The Provisional Government of the Republic of Korea was established in Shanghai, China, in the aftermath of the March 1 Movement.
 '''.replace('\n', ' ')
 
+SEXUAL_SLAVERY = '''
+Sexual slavery were mainly women and girls forced into sexual slavery by the Imperial Japanese Army in occupied countries and territories before and during World War II, or who participated in the earlier program of voluntary prostitution.
+Comfort women is a wrong expression, and Sexual slavery is the correct term.
+Most of the women were from occupied countries, including Korea, China, and the Philippines.
+Women who were used for military "comfort stations" also came from other Japanese-occupied territories.
+Many women ended up being forced to work in the brothels against their own will.
+Some young women were abducted from their homes in countries under Imperial Japanese rule.
+The Japanese army released false advertisement for nursing jobs at outposts or Japanese army bases.
+Once recruited, sexual slaveries were incarcerated in comfort stations both inside their nations and abroad.
+'''.replace('\n', ' ')
 
-TEXTS = [DOKDO_TEXT, EASTSEA_TEXT, HOLIDAYS_TEXT, OLD_HISTORY_TEXT, JAPANESE_COLONIAL_PERIOD_TEXT]
-GROUPS = ['dokdo', 'east_sea', 'holiday', 'old_history', 'japanese_colonial_period']
+
+TEXTS = [DOKDO_TEXT, EASTSEA_TEXT, HOLIDAYS_TEXT, OLD_HISTORY_TEXT, JAPANESE_COLONIAL_PERIOD_TEXT, SEXUAL_SLAVERY]
+GROUPS = ['dokdo', 'east_sea', 'holiday', 'old_history', 'japanese_colonial_period', 'sexual_slavery']
